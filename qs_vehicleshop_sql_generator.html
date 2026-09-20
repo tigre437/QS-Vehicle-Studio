@@ -91,6 +91,20 @@
         text-transform: uppercase;
     }
     .eyebrow::before { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); content: ""; box-shadow: 0 0 12px var(--cyan); }
+    .beta-badge {
+        display: inline-flex;
+        margin-left: 8px;
+        border: 1px solid rgba(250, 204, 21, .42);
+        border-radius: 999px;
+        padding: 6px 10px;
+        color: #fde68a;
+        background: rgba(250, 204, 21, .08);
+        font: 800 10px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        vertical-align: middle;
+        box-shadow: 0 0 18px rgba(250, 204, 21, .08);
+    }
     h1 {
         max-width: 900px;
         margin: 0 0 10px;
@@ -344,7 +358,7 @@
     </div>
     <header class="hero">
         <div class="eyebrow">Utility Tool</div>
-        <h1>QS VehicleShop SQL Generator</h1>
+        <h1>QS VehicleShop SQL Generator<span class="beta-badge">Sistema en beta</span></h1>
         <p class="subtitle">Genera INSERT para qs_vehicleshop_vehicles y qs_vehicleshop_stock sin conectarte a MySQL.</p>
     </header>
 
@@ -556,6 +570,7 @@ const priceProfiles = {
 const translations = {
     es: {
         'Idioma': 'Idioma',
+        'Sistema en beta': 'Sistema en beta',
         'Genera INSERT para qs_vehicleshop_vehicles y qs_vehicleshop_stock sin conectarte a MySQL.': 'Genera INSERT para qs_vehicleshop_vehicles y qs_vehicleshop_stock sin conectarte a MySQL.',
         'Configuración del concesionario': 'Configuración del concesionario',
         'Catálogo general': 'Catálogo general',
@@ -584,6 +599,7 @@ const translations = {
     },
     en: {
         'Idioma': 'Language',
+        'Sistema en beta': 'Beta system',
         'Genera INSERT para qs_vehicleshop_vehicles y qs_vehicleshop_stock sin conectarte a MySQL.': 'Generate INSERT statements for qs_vehicleshop_vehicles and qs_vehicleshop_stock without connecting to MySQL.',
         'Configuración del concesionario': 'Dealership settings',
         'Catálogo general': 'General catalog', 'Permite que los propietarios de concesionarios compren estos vehículos.': 'Allows dealership owners to purchase these vehicles.',
@@ -599,6 +615,7 @@ const translations = {
     },
     fr: {
         'Idioma': 'Langue',
+        'Sistema en beta': 'Système bêta',
         'Genera INSERT para qs_vehicleshop_vehicles y qs_vehicleshop_stock sin conectarte a MySQL.': 'Générez des requêtes INSERT pour qs_vehicleshop_vehicles et qs_vehicleshop_stock sans vous connecter à MySQL.',
         'Configuración del concesionario': 'Configuration du concessionnaire',
         'Catálogo general': 'Catalogue général', 'Permite que los propietarios de concesionarios compren estos vehículos.': "Permet aux propriétaires de concessions d'acheter ces véhicules.",
@@ -614,6 +631,7 @@ const translations = {
     },
     de: {
         'Idioma': 'Sprache',
+        'Sistema en beta': 'Beta-System',
         'Genera INSERT para qs_vehicleshop_vehicles y qs_vehicleshop_stock sin conectarte a MySQL.': 'Erzeuge INSERT-Anweisungen für qs_vehicleshop_vehicles und qs_vehicleshop_stock ohne MySQL-Verbindung.',
         'Configuración del concesionario': 'Autohaus-Einstellungen',
         'Catálogo general': 'Allgemeiner Katalog', 'Permite que los propietarios de concesionarios compren estos vehículos.': 'Ermöglicht Autohausbesitzern, diese Fahrzeuge zu kaufen.',
