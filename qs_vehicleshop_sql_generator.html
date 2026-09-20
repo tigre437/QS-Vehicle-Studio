@@ -135,16 +135,6 @@
         backdrop-filter: blur(16px);
         transition: border-color .25s, box-shadow .25s, transform .25s;
     }
-    .card::after {
-        position: absolute;
-        right: 0;
-        bottom: 0;
-        width: 18px;
-        height: 18px;
-        content: "";
-        background: linear-gradient(135deg, transparent 45%, var(--cyan) 46%, var(--cyan) 52%, transparent 53%);
-        opacity: .9;
-    }
     .card:hover { border-color: rgba(34, 211, 238, .35); box-shadow: 0 28px 80px rgba(0, 0, 0, .26), 0 0 30px rgba(34, 211, 238, .04); }
     h2 {
         display: flex;
