@@ -293,6 +293,8 @@
     .card-header h2 { margin: 0; }
     .card-header button { min-height: 34px; padding: 8px 14px; }
     .card-content.collapsed { display: none; }
+    .profile-editor { margin: 18px 0 12px; padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: rgba(2, 8, 23, .45); }
+    .profile-editor h4 { margin: 0 0 14px; color: var(--cyan); font-size: 14px; text-transform: uppercase; letter-spacing: .08em; }
     .vehicle-table { width: 100%; min-width: 1080px; border-collapse: collapse; }
     .vehicle-table th, .vehicle-table td { padding: 10px; border-bottom: 1px solid rgba(99, 121, 159, .14); text-align: left; }
     .vehicle-table tbody tr { transition: background .18s; }
@@ -488,14 +490,29 @@ futo, faggio
                 <div class="toolbar">
                     <div class="toolbar-field">
                         <label for="priceProfile">Perfil</label>
-                        <select id="priceProfile">
-                            <option value="economy">Económico</option>
-                            <option value="standard">Gama media</option>
-                            <option value="sport">Deportivo</option>
-                            <option value="super">Superdeportivo</option>
-                            <option value="motorcycle">Moto</option>
-                            <option value="commercial">Comercial</option>
-                        </select>
+                        <select id="priceProfile"></select>
+                    </div>
+                    <div class="buttons" style="margin-left:auto">
+                        <button class="secondary" type="button" onclick="editCurrentProfile()">Editar perfil</button>
+                        <button class="secondary" type="button" onclick="newProfilePrompt()">Nuevo perfil</button>
+                        <button class="warning" type="button" onclick="deleteCurrentProfile()">Eliminar perfil</button>
+                    </div>
+                </div>
+                <div class="profile-editor" id="profileEditor" style="display:none">
+                    <h4 id="profileEditorTitle">Editar perfil</h4>
+                    <div class="grid">
+                        <div><label for="profileKey">Identificador</label><input id="profileKey" type="text"></div>
+                        <div><label for="profileLabel">Nombre del perfil</label><input id="profileLabel" type="text"></div>
+                        <div><label for="profileMinPrice">Precio mínimo</label><input id="profileMinPrice" type="number" min="0"></div>
+                        <div><label for="profileMaxPrice">Precio máximo</label><input id="profileMaxPrice" type="number" min="0"></div>
+                        <div><label for="profileBuyPrice">Precio de compra</label><input id="profileBuyPrice" type="number" min="0"></div>
+                        <div><label for="profileStockPrice">Precio del stock</label><input id="profileStockPrice" type="number" min="0"></div>
+                        <div><label for="profileStock">Stock inicial</label><input id="profileStock" type="number" min="-1"></div>
+                        <div><label for="profileDiscount">Descuento (%)</label><input id="profileDiscount" type="number" min="0" max="100"></div>
+                    </div>
+                    <div class="buttons">
+                        <button class="success" type="button" onclick="saveProfile()">Guardar perfil</button>
+                        <button class="secondary" type="button" onclick="cancelProfileEdit()">Cancelar</button>
                     </div>
                 </div>
                 <div class="buttons">
@@ -562,14 +579,49 @@ let outputSections = { catalog: '', stock: '' };
 let activeOutputTab = 'all';
 let restoringState = false;
 const storageKey = 'qs-vehicleshop-generator-project-v2';
-const priceProfiles = {
-    economy: { minPrice: 10000, maxPrice: 50000, buyPrice: 25000, stockPrice: 30000, stock: 10, discount: 0 },
-    standard: { minPrice: 50000, maxPrice: 250000, buyPrice: 150000, stockPrice: 180000, stock: 6, discount: 0 },
-    sport: { minPrice: 250000, maxPrice: 750000, buyPrice: 500000, stockPrice: 600000, stock: 4, discount: 0 },
-    super: { minPrice: 750000, maxPrice: 3000000, buyPrice: 1500000, stockPrice: 1800000, stock: 2, discount: 0 },
-    motorcycle: { minPrice: 15000, maxPrice: 150000, buyPrice: 75000, stockPrice: 90000, stock: 8, discount: 0 },
-    commercial: { minPrice: 50000, maxPrice: 500000, buyPrice: 250000, stockPrice: 300000, stock: 5, discount: 0 }
+const profilesStorageKey = 'qs-vehicleshop-profiles';
+const defaultProfiles = {
+    economy: { label: 'Económico', minPrice: 10000, maxPrice: 50000, buyPrice: 25000, stockPrice: 30000, stock: 10, discount: 0 },
+    standard: { label: 'Gama media', minPrice: 50000, maxPrice: 250000, buyPrice: 150000, stockPrice: 180000, stock: 6, discount: 0 },
+    sport: { label: 'Deportivo', minPrice: 250000, maxPrice: 750000, buyPrice: 500000, stockPrice: 600000, stock: 4, discount: 0 },
+    super: { label: 'Superdeportivo', minPrice: 750000, maxPrice: 3000000, buyPrice: 1500000, stockPrice: 1800000, stock: 2, discount: 0 },
+    motorcycle: { label: 'Moto', minPrice: 15000, maxPrice: 150000, buyPrice: 75000, stockPrice: 90000, stock: 8, discount: 0 },
+    commercial: { label: 'Comercial', minPrice: 50000, maxPrice: 500000, buyPrice: 250000, stockPrice: 300000, stock: 5, discount: 0 }
 };
+const builtinProfileLabels = { economy: 'Económico', standard: 'Gama media', sport: 'Deportivo', super: 'Superdeportivo', motorcycle: 'Moto', commercial: 'Comercial' };
+let customProfiles = {};
+let priceProfiles = {};
+let editingProfileKey = null;
+
+function loadProfiles() {
+    try { customProfiles = JSON.parse(localStorage.getItem(profilesStorageKey)) || {}; } catch { customProfiles = {}; }
+    rebuildProfiles();
+}
+function saveProfiles() {
+    localStorage.setItem(profilesStorageKey, JSON.stringify(customProfiles));
+}
+function rebuildProfiles() {
+    priceProfiles = { ...defaultProfiles, ...customProfiles };
+    populatePriceProfiles();
+}
+function profileLabel(key, profile) {
+    const source = builtinProfileLabels[key];
+    if (source && translations[currentLanguage] && translations[currentLanguage][source]) return translations[currentLanguage][source];
+    return profile.label || key;
+}
+function populatePriceProfiles() {
+    const select = document.getElementById('priceProfile');
+    const previous = select.value;
+    select.innerHTML = '';
+    for (const [key, profile] of Object.entries(priceProfiles)) {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = profileLabel(key, profile);
+        select.appendChild(option);
+    }
+    if (priceProfiles[previous]) select.value = previous;
+}
+function isBuiltinProfile(key) { return Object.prototype.hasOwnProperty.call(defaultProfiles, key); }
 const translations = {
     es: {
         'Idioma': 'Idioma',
@@ -599,6 +651,8 @@ const translations = {
         'Valores por vehículo': 'Valores por vehículo',
         'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.': 'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.',
         'Contraer lista': 'Contraer lista', 'Expandir lista': 'Expandir lista',
+        'Editar perfil': 'Editar perfil', 'Nuevo perfil': 'Nuevo perfil', 'Eliminar perfil': 'Eliminar perfil', 'Guardar perfil': 'Guardar perfil', 'Cancelar': 'Cancelar',
+        'Identificador': 'Identificador', 'Nombre del perfil': 'Nombre del perfil',
         'SQL generado': 'SQL generado', 'Aquí aparecerá el SQL...': 'Aquí aparecerá el SQL...'
     },
     en: {
@@ -616,6 +670,8 @@ const translations = {
         'Generar SQL': 'Generate SQL', 'Limpiar lista': 'Clean list', 'Copiar SQL': 'Copy SQL', 'Descargar .sql': 'Download .sql',
         'Valores por vehículo': 'Values per vehicle', 'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.': 'Values are preserved while you edit the list. Apply the defaults and change only the vehicles that need adjustment.',
         'Contraer lista': 'Collapse list', 'Expandir lista': 'Expand list',
+        'Editar perfil': 'Edit profile', 'Nuevo perfil': 'New profile', 'Eliminar perfil': 'Delete profile', 'Guardar perfil': 'Save profile', 'Cancelar': 'Cancel',
+        'Identificador': 'Identifier', 'Nombre del perfil': 'Profile name',
         'SQL generado': 'Generated SQL', 'Aquí aparecerá el SQL...': 'The SQL will appear here...'
     },
     fr: {
@@ -633,6 +689,8 @@ const translations = {
         'Generar SQL': 'Générer le SQL', 'Limpiar lista': 'Nettoyer la liste', 'Copiar SQL': 'Copier le SQL', 'Descargar .sql': 'Télécharger .sql',
         'Valores por vehículo': 'Valeurs par véhicule', 'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.': 'Les valeurs sont conservées pendant la modification. Appliquez les valeurs par défaut puis modifiez uniquement les véhicules nécessaires.',
         'Contraer lista': 'Réduire la liste', 'Expandir lista': 'Développer la liste',
+        'Editar perfil': 'Modifier le profil', 'Nuevo perfil': 'Nouveau profil', 'Eliminar perfil': 'Supprimer le profil', 'Guardar perfil': 'Enregistrer le profil', 'Cancelar': 'Annuler',
+        'Identificador': 'Identifiant', 'Nombre del perfil': 'Nom du profil',
         'SQL generado': 'SQL généré', 'Aquí aparecerá el SQL...': 'Le SQL apparaîtra ici...'
     },
     de: {
@@ -650,6 +708,8 @@ const translations = {
         'Generar SQL': 'SQL erzeugen', 'Limpiar lista': 'Liste bereinigen', 'Copiar SQL': 'SQL kopieren', 'Descargar .sql': '.sql herunterladen',
         'Valores por vehículo': 'Werte pro Fahrzeug', 'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.': 'Die Werte bleiben beim Bearbeiten erhalten. Standardwerte anwenden und anschließend nur die benötigten Fahrzeuge anpassen.',
         'Contraer lista': 'Liste einklappen', 'Expandir lista': 'Liste erweitern',
+        'Editar perfil': 'Profil bearbeiten', 'Nuevo perfil': 'Neues Profil', 'Eliminar perfil': 'Profil löschen', 'Guardar perfil': 'Profil speichern', 'Cancelar': 'Abbrechen',
+        'Identificador': 'Kennung', 'Nombre del perfil': 'Profilname',
         'SQL generado': 'Erzeugtes SQL', 'Aquí aparecerá el SQL...': 'Das SQL wird hier angezeigt...'
     }
 };
@@ -665,10 +725,10 @@ Object.assign(translations.de, {
     'Herramientas avanzadas': 'Erweiterte Werkzeuge', 'Proyecto y SQL': 'Projekt und SQL', 'Vehículos existentes': 'Vorhandene Fahrzeuge', 'Insertar': 'Einfügen', 'Ignorar existentes': 'Vorhandene ignorieren', 'Actualizar existentes': 'Vorhandene aktualisieren', 'Exportar proyecto': 'Projekt exportieren', 'Importar proyecto': 'Projekt importieren', 'Importar SQL pegado': 'Eingefügtes SQL importieren', 'Perfiles y edición masiva': 'Profile und Massenbearbeitung', 'Perfil': 'Profil', 'Económico': 'Günstig', 'Gama media': 'Mittelklasse', 'Deportivo': 'Sport', 'Superdeportivo': 'Supersportwagen', 'Moto': 'Motorrad', 'Comercial': 'Nutzfahrzeug', 'Aplicar a seleccionados': 'Auf Auswahl anwenden', 'Aplicar predeterminados': 'Standardwerte anwenden', 'Asignar concesionario actual': 'Aktuelles Autohaus zuweisen', 'Eliminar seleccionados': 'Auswahl entfernen', 'Fórmulas de precio': 'Preisformeln', 'Mínimo − %': 'Minimum − %', 'Máximo + %': 'Maximum + %', 'Stock + %': 'Bestand + %', 'Redondear a': 'Runden auf', 'Calcular seleccionados': 'Auswahl berechnen', 'Buscar': 'Suchen', 'Filtro': 'Filter', 'Todos': 'Alle', 'Seleccionados': 'Ausgewählt', 'Ocultos': 'Ausgeblendet', 'Ordenar': 'Sortieren', 'Orden de entrada': 'Eingabereihenfolge', 'Nombre': 'Name', 'Precio ascendente': 'Preis aufsteigend', 'Precio descendente': 'Preis absteigend', 'Deshacer': 'Rückgängig', 'Rehacer': 'Wiederholen', 'Todo': 'Alles', 'Catálogo': 'Katalog', 'Concesionario': 'Autohaus'
 });
 const messages = {
-    es: { empty: 'Añade vehículos para editar sus valores.', none: 'No se han encontrado vehículos.', one: 'vehículo detectado', many: 'vehículos detectados', model: 'Modelo', min: 'Precio mínimo', max: 'Precio máximo', buy: 'Precio compra', price: 'Precio stock', stock: 'Stock', discount: 'Descuento %', unlimited: 'Ilimitado', hidden: 'Oculto', no: 'No', yes: 'Sí', copied: 'SQL copiado al portapapeles.', description: 'Vehículo disponible en nuestro concesionario.', vehicles: 'VEHÍCULOS', dealership: 'Concesionario ID', actions: 'Acciones', duplicate: 'Duplicar', remove: 'Quitar', noResults: 'No hay vehículos que coincidan con los filtros.' },
-    en: { empty: 'Add vehicles to edit their values.', none: 'No vehicles found.', one: 'vehicle detected', many: 'vehicles detected', model: 'Model', min: 'Minimum price', max: 'Maximum price', buy: 'Purchase price', price: 'Stock price', stock: 'Stock', discount: 'Discount %', unlimited: 'Unlimited', hidden: 'Hidden', no: 'No', yes: 'Yes', copied: 'SQL copied to clipboard.', description: 'Vehicle available at our dealership.', vehicles: 'VEHICLES', dealership: 'Dealership ID', actions: 'Actions', duplicate: 'Duplicate', remove: 'Remove', noResults: 'No vehicles match the filters.' },
-    fr: { empty: 'Ajoutez des véhicules pour modifier leurs valeurs.', none: 'Aucun véhicule trouvé.', one: 'véhicule détecté', many: 'véhicules détectés', model: 'Modèle', min: 'Prix minimum', max: 'Prix maximum', buy: "Prix d'achat", price: 'Prix du stock', stock: 'Stock', discount: 'Remise %', unlimited: 'Illimité', hidden: 'Masqué', no: 'Non', yes: 'Oui', copied: 'SQL copié dans le presse-papiers.', description: 'Véhicule disponible chez notre concessionnaire.', vehicles: 'VÉHICULES', dealership: 'ID du concessionnaire', actions: 'Actions', duplicate: 'Dupliquer', remove: 'Retirer', noResults: 'Aucun véhicule ne correspond aux filtres.' },
-    de: { empty: 'Fahrzeuge hinzufügen, um ihre Werte zu bearbeiten.', none: 'Keine Fahrzeuge gefunden.', one: 'Fahrzeug erkannt', many: 'Fahrzeuge erkannt', model: 'Modell', min: 'Mindestpreis', max: 'Höchstpreis', buy: 'Einkaufspreis', price: 'Bestandspreis', stock: 'Bestand', discount: 'Rabatt %', unlimited: 'Unbegrenzt', hidden: 'Ausgeblendet', no: 'Nein', yes: 'Ja', copied: 'SQL in die Zwischenablage kopiert.', description: 'Fahrzeug in unserem Autohaus verfügbar.', vehicles: 'FAHRZEUGE', dealership: 'Autohaus-ID', actions: 'Aktionen', duplicate: 'Duplizieren', remove: 'Entfernen', noResults: 'Keine Fahrzeuge entsprechen den Filtern.' }
+    es: { empty: 'Añade vehículos para editar sus valores.', none: 'No se han encontrado vehículos.', one: 'vehículo detectado', many: 'vehículos detectados', model: 'Modelo', min: 'Precio mínimo', max: 'Precio máximo', buy: 'Precio compra', price: 'Precio stock', stock: 'Stock', discount: 'Descuento %', unlimited: 'Ilimitado', hidden: 'Oculto', no: 'No', yes: 'Sí', copied: 'SQL copiado al portapapeles.', description: 'Vehículo disponible en nuestro concesionario.', vehicles: 'VEHÍCULOS', dealership: 'Concesionario ID', actions: 'Acciones', duplicate: 'Duplicar', remove: 'Quitar', noResults: 'No hay vehículos que coincidan con los filtros.', profileApplied: 'Perfil aplicado.', profileSaved: 'Perfil guardado.', profileDeleted: 'Perfil eliminado.', cannotDeleteBuiltin: 'No se puede eliminar un perfil incorporado.', profileExists: 'Ya existe un perfil con ese identificador.', invalidProfileKey: 'Identificador no válido. Usa solo letras, números, guiones y guiones bajos.', noVehiclesSelected: 'No hay vehículos seleccionados.' },
+    en: { empty: 'Add vehicles to edit their values.', none: 'No vehicles found.', one: 'vehicle detected', many: 'vehicles detected', model: 'Model', min: 'Minimum price', max: 'Maximum price', buy: 'Purchase price', price: 'Stock price', stock: 'Stock', discount: 'Discount %', unlimited: 'Unlimited', hidden: 'Hidden', no: 'No', yes: 'Yes', copied: 'SQL copied to clipboard.', description: 'Vehicle available at our dealership.', vehicles: 'VEHICLES', dealership: 'Dealership ID', actions: 'Actions', duplicate: 'Duplicate', remove: 'Remove', noResults: 'No vehicles match the filters.', profileApplied: 'Profile applied.', profileSaved: 'Profile saved.', profileDeleted: 'Profile deleted.', cannotDeleteBuiltin: 'Built-in profiles cannot be deleted.', profileExists: 'A profile with that identifier already exists.', invalidProfileKey: 'Invalid identifier. Use only letters, numbers, hyphens and underscores.', noVehiclesSelected: 'No vehicles selected.' },
+    fr: { empty: 'Ajoutez des véhicules pour modifier leurs valeurs.', none: 'Aucun véhicule trouvé.', one: 'véhicule détecté', many: 'véhicules détectés', model: 'Modèle', min: 'Prix minimum', max: 'Prix maximum', buy: "Prix d'achat", price: 'Prix du stock', stock: 'Stock', discount: 'Remise %', unlimited: 'Illimité', hidden: 'Masqué', no: 'Non', yes: 'Oui', copied: 'SQL copié dans le presse-papiers.', description: 'Véhicule disponible chez notre concessionnaire.', vehicles: 'VÉHICULES', dealership: 'ID du concessionnaire', actions: 'Actions', duplicate: 'Dupliquer', remove: 'Retirer', noResults: 'Aucun véhicule ne correspond aux filtres.', profileApplied: 'Profil appliqué.', profileSaved: 'Profil enregistré.', profileDeleted: 'Profil supprimé.', cannotDeleteBuiltin: 'Les profils intégrés ne peuvent pas être supprimés.', profileExists: 'Un profil avec cet identifiant existe déjà.', invalidProfileKey: 'Identifiant invalide. Utilisez uniquement des lettres, chiffres, tirets et underscores.', noVehiclesSelected: 'Aucun véhicule sélectionné.' },
+    de: { empty: 'Fahrzeuge hinzufügen, um ihre Werte zu bearbeiten.', none: 'Keine Fahrzeuge gefunden.', one: 'Fahrzeug erkannt', many: 'Fahrzeuge erkannt', model: 'Modell', min: 'Mindestpreis', max: 'Höchstpreis', buy: 'Einkaufspreis', price: 'Bestandspreis', stock: 'Bestand', discount: 'Rabatt %', unlimited: 'Unbegrenzt', hidden: 'Ausgeblendet', no: 'Nein', yes: 'Ja', copied: 'SQL in die Zwischenablage kopiert.', description: 'Fahrzeug in unserem Autohaus verfügbar.', vehicles: 'FAHRZEUGE', dealership: 'Autohaus-ID', actions: 'Aktionen', duplicate: 'Duplizieren', remove: 'Entfernen', noResults: 'Keine Fahrzeuge entsprechen den Filtern.', profileApplied: 'Profil angewendet.', profileSaved: 'Profil gespeichert.', profileDeleted: 'Profil gelöscht.', cannotDeleteBuiltin: 'Integrierte Profile können nicht gelöscht werden.', profileExists: 'Ein Profil mit dieser Kennung existiert bereits.', invalidProfileKey: 'Ungültige Kennung. Verwenden Sie nur Buchstaben, Zahlen, Bindestriche und Unterstriche.', noVehiclesSelected: 'Keine Fahrzeuge ausgewählt.' }
 };
 let currentLanguage = 'es';
 const staticTextNodes = [];
@@ -703,6 +763,7 @@ function setLanguage(language) {
     const defaultDescriptions = Object.values(messages).map(languageMessages => languageMessages.description);
     if (defaultDescriptions.includes(description.value)) description.value = messages[currentLanguage].description;
 
+    populatePriceProfiles();
     const vehicles = parseVehicles();
     document.getElementById('stats').textContent = vehicleCount(vehicles.length);
     renderVehicleEditor(vehicles);
@@ -983,7 +1044,7 @@ function projectState() {
         const element = document.getElementById(id);
         fields[id] = element.type === 'checkbox' ? element.checked : element.value;
     }
-    return { version: 2, vehicles: document.getElementById('vehicles').value, values: Object.fromEntries(vehicleValues), selected: [...selectedVehicles], fields };
+    return { version: 2, vehicles: document.getElementById('vehicles').value, values: Object.fromEntries(vehicleValues), selected: [...selectedVehicles], fields, priceProfiles: customProfiles };
 }
 
 function restoreProject(state, addHistory = false) {
@@ -997,6 +1058,9 @@ function restoreProject(state, addHistory = false) {
         if (element.type === 'checkbox') element.checked = Boolean(value);
         else element.value = value;
     }
+    customProfiles = state.priceProfiles && typeof state.priceProfiles === 'object' ? state.priceProfiles : {};
+    saveProfiles();
+    rebuildProfiles();
     vehicleValues.clear();
     for (const [vehicle, values] of Object.entries(state.values || {})) vehicleValues.set(vehicle, { ...defaultValues(), ...values });
     selectedVehicles.clear();
@@ -1042,7 +1106,7 @@ function redo() {
 function targetVehicles() {
     const vehicles = parseVehicles();
     const selected = vehicles.filter(vehicle => selectedVehicles.has(vehicle));
-    if (!selected.length) notify('No hay vehículos seleccionados.', 'error');
+    if (!selected.length) notify(t('noVehiclesSelected'), 'error');
     return selected;
 }
 
@@ -1052,7 +1116,69 @@ function applyProfile() {
     pushHistory();
     const profile = priceProfiles[document.getElementById('priceProfile').value];
     for (const vehicle of targets) Object.assign(vehicleValues.get(vehicle), profile);
-    renderVehicleEditor(); saveProject(); notify('Perfil aplicado.');
+    renderVehicleEditor(); saveProject(); notify(t('profileApplied'));
+}
+
+function editCurrentProfile() {
+    const key = document.getElementById('priceProfile').value;
+    openProfileEditor(key, false);
+}
+function newProfilePrompt() {
+    openProfileEditor('', true);
+}
+function openProfileEditor(key, isNew) {
+    editingProfileKey = key;
+    const editor = document.getElementById('profileEditor');
+    const title = document.getElementById('profileEditorTitle');
+    const keyInput = document.getElementById('profileKey');
+    const values = priceProfiles[key] || priceProfiles[document.getElementById('priceProfile').value] || defaultProfiles.economy;
+    title.textContent = isNew ? 'Nuevo perfil' : 'Editar perfil';
+    keyInput.value = isNew ? '' : key;
+    keyInput.disabled = !isNew;
+    document.getElementById('profileLabel').value = values.label || '';
+    document.getElementById('profileMinPrice').value = values.minPrice;
+    document.getElementById('profileMaxPrice').value = values.maxPrice;
+    document.getElementById('profileBuyPrice').value = values.buyPrice;
+    document.getElementById('profileStockPrice').value = values.stockPrice;
+    document.getElementById('profileStock').value = values.stock;
+    document.getElementById('profileDiscount').value = values.discount;
+    editor.style.display = 'block';
+}
+function cancelProfileEdit() {
+    document.getElementById('profileEditor').style.display = 'none';
+    editingProfileKey = null;
+}
+function saveProfile() {
+    const keyInput = document.getElementById('profileKey');
+    const key = keyInput.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if (!key) { notify(t('invalidProfileKey'), 'error'); return; }
+    const isNew = !editingProfileKey;
+    if (isNew && priceProfiles[key]) { notify(t('profileExists'), 'error'); return; }
+    customProfiles[key] = {
+        label: document.getElementById('profileLabel').value.trim() || key,
+        minPrice: Number(document.getElementById('profileMinPrice').value) || 0,
+        maxPrice: Number(document.getElementById('profileMaxPrice').value) || 0,
+        buyPrice: Number(document.getElementById('profileBuyPrice').value) || 0,
+        stockPrice: Number(document.getElementById('profileStockPrice').value) || 0,
+        stock: Number(document.getElementById('profileStock').value) || 0,
+        discount: Number(document.getElementById('profileDiscount').value) || 0
+    };
+    saveProfiles();
+    rebuildProfiles();
+    document.getElementById('priceProfile').value = key;
+    cancelProfileEdit();
+    notify(t('profileSaved'));
+}
+function deleteCurrentProfile() {
+    const key = document.getElementById('priceProfile').value;
+    if (isBuiltinProfile(key) && !customProfiles[key]) {
+        notify(t('cannotDeleteBuiltin'), 'error');
+        return;
+    }
+    delete customProfiles[key];
+    saveProfiles();
+    rebuildProfiles();
+    notify(t('profileDeleted'));
 }
 
 function applyDefaultsToSelected() {
@@ -1287,6 +1413,7 @@ document.addEventListener('keydown', event => {
     if (event.ctrlKey && (event.key.toLowerCase() === 'y' || (event.shiftKey && event.key.toLowerCase() === 'z'))) { event.preventDefault(); redo(); }
 });
 initializeTranslations();
+loadProfiles();
 updateTargetFields();
 loadSavedProject();
 </script>
