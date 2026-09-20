@@ -114,8 +114,8 @@ Esta herramienta sigue la estructura usada por `default_stores.sql`. Si tu versi
 ```text
 index.html                                Entrada de GitHub Pages
 qs_vehicleshop_sql_generator.html         Generador completo
-icon0.svg                                 Logo de Quasar
-58aa80e40296bdeaf6b1c5fd79a64df5.webp    Logo personal
+quasar-logo.svg                           Logo de Quasar
+tigre-logo.webp                           Logo personal
 ```
 
 ## Atajos
