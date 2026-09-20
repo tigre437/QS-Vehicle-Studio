@@ -299,6 +299,10 @@
     .row-actions { display: flex; gap: 6px; }
     .icon-button { min-height: 32px; padding: 7px 9px; font-size: 10px; }
     .vehicle-editor { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: rgba(2, 8, 23, .35); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+    .card-header h2 { margin: 0; }
+    .card-header button { min-height: 34px; padding: 8px 14px; }
+    .card-content.collapsed { display: none; }
     .vehicle-table { width: 100%; min-width: 1080px; border-collapse: collapse; }
     .vehicle-table th, .vehicle-table td { padding: 10px; border-bottom: 1px solid rgba(99, 121, 159, .14); text-align: left; }
     .vehicle-table tbody tr { transition: background .18s; }
@@ -525,17 +529,25 @@ futo, faggio
     </div>
 
     <div class="card">
-        <h2>Valores por vehículo</h2>
-        <p style="color:#999">Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.</p>
-        <div class="toolbar">
-            <div class="toolbar-field"><label for="vehicleSearch">Buscar</label><input id="vehicleSearch" type="search" placeholder="Modelo..."></div>
-            <div class="toolbar-field compact"><label for="vehicleFilter">Filtro</label><select id="vehicleFilter"><option value="all">Todos</option><option value="selected">Seleccionados</option><option value="hidden">Ocultos</option><option value="unlimited">Stock ilimitado</option></select></div>
-            <div class="toolbar-field compact"><label for="vehicleSort">Ordenar</label><select id="vehicleSort"><option value="input">Orden de entrada</option><option value="name">Nombre</option><option value="priceAsc">Precio ascendente</option><option value="priceDesc">Precio descendente</option></select></div>
-            <div class="buttons"><button class="secondary" type="button" onclick="undo()">Deshacer</button><button class="secondary" type="button" onclick="redo()">Rehacer</button></div>
+        <div class="card-header">
+            <h2>Valores por vehículo</h2>
+            <button class="secondary" type="button" id="vehicleListToggle" onclick="toggleVehicleList()">
+                <span class="collapse-label">Contraer lista</span>
+                <span class="expand-label" style="display:none">Expandir lista</span>
+            </button>
         </div>
-        <div class="validation-summary" id="validationSummary"></div>
-        <div class="vehicle-editor" id="vehicleEditor">
-            <div class="empty-editor">Añade vehículos para editar sus valores.</div>
+        <div id="vehicleListContent" class="card-content">
+            <p style="color:#999">Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.</p>
+            <div class="toolbar">
+                <div class="toolbar-field"><label for="vehicleSearch">Buscar</label><input id="vehicleSearch" type="search" placeholder="Modelo..."></div>
+                <div class="toolbar-field compact"><label for="vehicleFilter">Filtro</label><select id="vehicleFilter"><option value="all">Todos</option><option value="selected">Seleccionados</option><option value="hidden">Ocultos</option><option value="unlimited">Stock ilimitado</option></select></div>
+                <div class="toolbar-field compact"><label for="vehicleSort">Ordenar</label><select id="vehicleSort"><option value="input">Orden de entrada</option><option value="name">Nombre</option><option value="priceAsc">Precio ascendente</option><option value="priceDesc">Precio descendente</option></select></div>
+                <div class="buttons"><button class="secondary" type="button" onclick="undo()">Deshacer</button><button class="secondary" type="button" onclick="redo()">Rehacer</button></div>
+            </div>
+            <div class="validation-summary" id="validationSummary"></div>
+            <div class="vehicle-editor" id="vehicleEditor">
+                <div class="empty-editor">Añade vehículos para editar sus valores.</div>
+            </div>
         </div>
     </div>
 
@@ -596,6 +608,7 @@ const translations = {
         'Generar SQL': 'Generar SQL', 'Limpiar lista': 'Limpiar lista', 'Copiar SQL': 'Copiar SQL', 'Descargar .sql': 'Descargar .sql',
         'Valores por vehículo': 'Valores por vehículo',
         'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.': 'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.',
+        'Contraer lista': 'Contraer lista', 'Expandir lista': 'Expandir lista',
         'SQL generado': 'SQL generado', 'Aquí aparecerá el SQL...': 'Aquí aparecerá el SQL...'
     },
     en: {
@@ -612,6 +625,7 @@ const translations = {
         'Lista de vehículos': 'Vehicle list', 'Puedes pegar prácticamente cualquier formato: uno por línea, separados por comas, con espacios, comillas o mezclados.': 'Paste almost any format: one per line, comma-separated, with spaces, quotes, or mixed.',
         'Generar SQL': 'Generate SQL', 'Limpiar lista': 'Clean list', 'Copiar SQL': 'Copy SQL', 'Descargar .sql': 'Download .sql',
         'Valores por vehículo': 'Values per vehicle', 'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.': 'Values are preserved while you edit the list. Apply the defaults and change only the vehicles that need adjustment.',
+        'Contraer lista': 'Collapse list', 'Expandir lista': 'Expand list',
         'SQL generado': 'Generated SQL', 'Aquí aparecerá el SQL...': 'The SQL will appear here...'
     },
     fr: {
@@ -628,6 +642,7 @@ const translations = {
         'Lista de vehículos': 'Liste des véhicules', 'Puedes pegar prácticamente cualquier formato: uno por línea, separados por comas, con espacios, comillas o mezclados.': 'Collez presque tous les formats : un par ligne, séparés par des virgules, avec des espaces, des guillemets ou un mélange.',
         'Generar SQL': 'Générer le SQL', 'Limpiar lista': 'Nettoyer la liste', 'Copiar SQL': 'Copier le SQL', 'Descargar .sql': 'Télécharger .sql',
         'Valores por vehículo': 'Valeurs par véhicule', 'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.': 'Les valeurs sont conservées pendant la modification. Appliquez les valeurs par défaut puis modifiez uniquement les véhicules nécessaires.',
+        'Contraer lista': 'Réduire la liste', 'Expandir lista': 'Développer la liste',
         'SQL generado': 'SQL généré', 'Aquí aparecerá el SQL...': 'Le SQL apparaîtra ici...'
     },
     de: {
@@ -644,6 +659,7 @@ const translations = {
         'Lista de vehículos': 'Fahrzeugliste', 'Puedes pegar prácticamente cualquier formato: uno por línea, separados por comas, con espacios, comillas o mezclados.': 'Fast jedes Format einfügen: eines pro Zeile, kommagetrennt, mit Leerzeichen, Anführungszeichen oder gemischt.',
         'Generar SQL': 'SQL erzeugen', 'Limpiar lista': 'Liste bereinigen', 'Copiar SQL': 'SQL kopieren', 'Descargar .sql': '.sql herunterladen',
         'Valores por vehículo': 'Werte pro Fahrzeug', 'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.': 'Die Werte bleiben beim Bearbeiten erhalten. Standardwerte anwenden und anschließend nur die benötigten Fahrzeuge anpassen.',
+        'Contraer lista': 'Liste einklappen', 'Expandir lista': 'Liste erweitern',
         'SQL generado': 'Erzeugtes SQL', 'Aquí aparecerá el SQL...': 'Das SQL wird hier angezeigt...'
     }
 };
@@ -959,6 +975,15 @@ function generate() {
 function renderOutput() {
     const sections = activeOutputTab === 'all' ? [outputSections.catalog, outputSections.stock] : [outputSections[activeOutputTab]];
     document.getElementById('output').textContent = sections.filter(Boolean).join('\n\n') || 'No hay SQL para esta sección.';
+}
+
+function toggleVehicleList() {
+    const content = document.getElementById('vehicleListContent');
+    const collapseLabel = document.querySelector('#vehicleListToggle .collapse-label');
+    const expandLabel = document.querySelector('#vehicleListToggle .expand-label');
+    const isCollapsed = content.classList.toggle('collapsed');
+    collapseLabel.style.display = isCollapsed ? 'none' : '';
+    expandLabel.style.display = isCollapsed ? '' : 'none';
 }
 
 function projectState() {
