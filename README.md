@@ -116,9 +116,6 @@ index.html                                Entrada de GitHub Pages
 qs_vehicleshop_sql_generator.html         Generador completo
 icon0.svg                                 Logo de Quasar
 58aa80e40296bdeaf6b1c5fd79a64df5.webp    Logo personal
-default_stores.sql                        Datos de referencia de QS VehicleShop
-esx.sql                                   Referencia ESX
-qbcore.sql                                Referencia QBCore
 ```
 
 ## Atajos
