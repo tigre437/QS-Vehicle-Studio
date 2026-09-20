@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QS VehicleShop SQL Generator</title>
+<style>
+    :root {
+        --bg: #050b1c;
+        --surface: rgba(15, 27, 50, .78);
+        --surface-2: rgba(8, 17, 35, .86);
+        --line: rgba(99, 121, 159, .24);
+        --line-bright: rgba(34, 211, 238, .5);
+        --text: #eef6ff;
+        --muted: #8b9bb7;
+        --cyan: #22d3ee;
+        --blue: #3b82f6;
+        --danger: #fb7185;
+        --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+        min-height: 100vh;
+        margin: 0;
+        color: var(--text);
+        background:
+            radial-gradient(circle at 82% 7%, rgba(37, 99, 235, .12), transparent 28rem),
+            radial-gradient(circle at 12% 42%, rgba(6, 182, 212, .07), transparent 26rem),
+            var(--bg);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body::before {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        content: "";
+        opacity: .18;
+        background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+        background-size: 32px 32px;
+        mask-image: linear-gradient(to bottom, black, transparent 80%);
+    }
+    .container {
+        width: min(1380px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 42px 0 72px;
+    }
+    .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 42px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 20px;
+    }
+    .brand-lockup { display: flex; align-items: center; gap: 16px; }
+    .brand {
+        display: flex;
+        align-items: center;
+    }
+    .brand-logo {
+        width: 56px;
+        height: 56px;
+        border: 1px solid rgba(148, 163, 184, .18);
+        border-radius: 11px;
+        padding: 6px;
+        object-fit: contain;
+        background: rgba(8, 17, 35, .7);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+    }
+    .brand:first-child .brand-logo { filter: drop-shadow(0 0 9px rgba(34, 211, 238, .18)); }
+    .brand:last-child .brand-logo { filter: drop-shadow(0 0 9px rgba(250, 204, 21, .2)); }
+    .brand-x {
+        color: #52647f;
+        font: 300 22px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+    .hero { margin: 12px 0 34px; }
+    .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(34, 211, 238, .3);
+        border-radius: 999px;
+        padding: 5px 12px;
+        color: var(--cyan);
+        background: rgba(6, 182, 212, .08);
+        font: 700 10px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+    }
+    .eyebrow::before { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); content: ""; box-shadow: 0 0 12px var(--cyan); }
+    h1 {
+        max-width: 900px;
+        margin: 0 0 10px;
+        font-size: clamp(34px, 5vw, 58px);
+        line-height: 1.03;
+        letter-spacing: -.045em;
+        text-shadow: 0 0 35px rgba(34, 211, 238, .08);
+    }
+    .subtitle { max-width: 760px; margin: 0; color: #a7b4ca; font-size: 16px; line-height: 1.65; }
+    .language-picker {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+    }
+    .language-picker label { margin: 0; color: var(--cyan); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; text-transform: uppercase; letter-spacing: .12em; }
+    .language-picker select { width: auto; min-width: 150px; }
+    .card {
+        position: relative;
+        margin-bottom: 22px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 24px;
+        background: linear-gradient(145deg, rgba(18, 33, 59, .82), rgba(8, 17, 35, .84));
+        box-shadow: 0 24px 70px rgba(0, 0, 0, .2), inset 0 1px rgba(255, 255, 255, .025);
+        backdrop-filter: blur(16px);
+        transition: border-color .25s, box-shadow .25s, transform .25s;
+    }
+    .card::after {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 18px;
+        height: 18px;
+        content: "";
+        background: linear-gradient(135deg, transparent 45%, var(--cyan) 46%, var(--cyan) 52%, transparent 53%);
+        opacity: .9;
+    }
+    .card:hover { border-color: rgba(34, 211, 238, .35); box-shadow: 0 28px 80px rgba(0, 0, 0, .26), 0 0 30px rgba(34, 211, 238, .04); }
+    h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 20px;
+        font-size: 17px;
+        font-style: italic;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+    h2::before { color: var(--cyan); content: "↳"; font-style: normal; text-shadow: 0 0 12px var(--cyan); }
+    .card > p { margin: -10px 0 20px !important; color: var(--muted) !important; font-size: 13px; line-height: 1.6; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+    label {
+        display: block;
+        margin-bottom: 7px;
+        color: #aab8cf;
+        font: 700 11px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+    input, textarea, select {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        outline: none;
+        padding: 11px 12px;
+        color: #dcecff;
+        background: rgba(2, 8, 23, .7);
+        box-shadow: inset 0 1px 4px rgba(0, 0, 0, .24);
+        transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    input:hover, textarea:hover, select:hover { border-color: rgba(148, 163, 184, .35); }
+    input:focus, textarea:focus, select:focus { border-color: var(--cyan); background: rgba(2, 8, 23, .92); box-shadow: 0 0 0 3px rgba(34, 211, 238, .11), inset 0 1px 4px rgba(0, 0, 0, .2); }
+    input:disabled, textarea:disabled, select:disabled {
+        cursor: not-allowed;
+        border-color: rgba(99, 121, 159, .1);
+        color: #506079;
+        background: rgba(2, 8, 23, .3);
+        box-shadow: none;
+        opacity: .55;
+    }
+    textarea { min-height: 210px; resize: vertical; font: 13px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    textarea::placeholder { color: #46546c; }
+    .description { min-height: 92px; font-family: inherit; }
+    .buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    button {
+        min-height: 40px;
+        border: 1px solid transparent;
+        border-radius: 9px;
+        padding: 10px 17px;
+        cursor: pointer;
+        color: white;
+        background: rgba(30, 41, 59, .7);
+        font: 800 11px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        transition: transform .18s, border-color .2s, box-shadow .2s, background .2s;
+    }
+    button:hover { transform: translateY(-2px); }
+    button:active { transform: translateY(0); }
+    .success { background: linear-gradient(100deg, #06b6d4, #2563eb); box-shadow: 0 10px 28px rgba(6, 182, 212, .2); }
+    .success:hover { box-shadow: 0 12px 34px rgba(6, 182, 212, .34); }
+    .secondary { border-color: var(--line); color: #d3deed; background: rgba(30, 41, 59, .56); }
+    .secondary:hover { border-color: rgba(34, 211, 238, .45); background: rgba(30, 50, 75, .8); }
+    .warning { border-color: rgba(251, 113, 133, .24); color: #fda4af; background: rgba(127, 29, 29, .16); }
+    .warning:hover { border-color: rgba(251, 113, 133, .5); }
+    .stats {
+        display: inline-flex;
+        margin-top: 12px;
+        border: 1px solid rgba(34, 211, 238, .16);
+        border-radius: 999px;
+        padding: 5px 10px;
+        color: var(--cyan);
+        background: rgba(34, 211, 238, .06);
+        font: 700 11px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+    pre {
+        min-height: 220px;
+        max-height: 600px;
+        margin: 0;
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 18px;
+        color: #9bdcf0;
+        background: rgba(2, 8, 23, .76);
+        font: 12px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+        box-shadow: inset 0 1px 8px rgba(0,0,0,.25);
+    }
+    .checkbox {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: fit-content;
+        margin-top: 20px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 9px 12px;
+        background: rgba(15, 23, 42, .45);
+    }
+    .checkbox input { width: 16px; height: 16px; margin: 0; accent-color: var(--cyan); }
+    .checkbox label { margin: 0 !important; cursor: pointer; }
+    .output-targets {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 22px;
+    }
+    .target-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 0;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px;
+        cursor: pointer;
+        background: rgba(2, 8, 23, .4);
+        transition: border-color .2s, background .2s, box-shadow .2s;
+    }
+    .target-option:hover { border-color: rgba(34, 211, 238, .4); background: rgba(9, 30, 53, .65); }
+    .target-option:has(input:checked) { border-color: rgba(34, 211, 238, .5); background: rgba(6, 182, 212, .07); box-shadow: inset 0 0 22px rgba(34, 211, 238, .035); }
+    .target-option input { flex: 0 0 auto; width: 17px; height: 17px; margin: 1px 0 0; accent-color: var(--cyan); }
+    .target-copy { display: grid; gap: 5px; }
+    .target-title { color: #dcecff; font: 800 12px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; }
+    .target-description { color: var(--muted); font: 400 12px/1.5 Inter, ui-sans-serif, system-ui, sans-serif; letter-spacing: 0; text-transform: none; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-bottom: 16px; }
+    .toolbar-field { flex: 1 1 150px; min-width: 130px; }
+    .toolbar-field.compact { flex: 0 1 150px; }
+    .toolbar .buttons { margin: 0; }
+    .advanced-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .tool-panel { border: 1px solid var(--line); border-radius: 10px; padding: 15px; background: rgba(2, 8, 23, .35); }
+    .tool-panel h3 { margin: 0 0 13px; color: #cfe8f5; font: 800 11px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .1em; text-transform: uppercase; }
+    .tool-panel .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .validation-summary { display: none; margin-bottom: 16px; border: 1px solid rgba(251, 113, 133, .35); border-radius: 10px; padding: 13px 15px; color: #fecdd3; background: rgba(127, 29, 29, .14); font-size: 12px; line-height: 1.6; }
+    .validation-summary.visible { display: block; }
+    .validation-summary ul { margin: 7px 0 0; padding-left: 20px; }
+    .invalid-field { border-color: var(--danger) !important; box-shadow: 0 0 0 2px rgba(251, 113, 133, .1) !important; }
+    .vehicle-table tr.invalid-row { background: rgba(127, 29, 29, .16); }
+    .vehicle-table tr.invalid-row td:first-child { box-shadow: inset 3px 0 var(--danger); }
+    .output-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .output-tab { min-height: 34px; padding: 8px 13px; border-color: var(--line); color: var(--muted); background: rgba(15, 23, 42, .5); }
+    .output-tab.active { border-color: rgba(34, 211, 238, .45); color: var(--cyan); background: rgba(34, 211, 238, .08); }
+    .toast-container { position: fixed; right: 20px; bottom: 20px; z-index: 1000; display: grid; gap: 10px; pointer-events: none; }
+    .toast { min-width: 240px; max-width: 380px; border: 1px solid rgba(34, 211, 238, .35); border-radius: 10px; padding: 12px 15px; color: #dff8ff; background: rgba(8, 22, 40, .96); box-shadow: 0 18px 45px rgba(0,0,0,.35); animation: toast-in .22s ease-out; font-size: 13px; }
+    .toast.error { border-color: rgba(251, 113, 133, .45); color: #fecdd3; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+    .row-actions { display: flex; gap: 6px; }
+    .icon-button { min-height: 32px; padding: 7px 9px; font-size: 10px; }
+    .vehicle-editor { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: rgba(2, 8, 23, .35); }
+    .vehicle-table { width: 100%; min-width: 1080px; border-collapse: collapse; }
+    .vehicle-table th, .vehicle-table td { padding: 10px; border-bottom: 1px solid rgba(99, 121, 159, .14); text-align: left; }
+    .vehicle-table tbody tr { transition: background .18s; }
+    .vehicle-table tbody tr:hover { background: rgba(34, 211, 238, .035); }
+    .vehicle-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        color: #8495b1;
+        background: #0c172c;
+        font: 700 10px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+    .vehicle-table td:first-child { color: var(--cyan); font: 700 12px/1 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .vehicle-table input, .vehicle-table select { min-width: 105px; padding: 8px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .empty-editor { padding: 44px 20px; color: #52617a; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; text-align: center; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: rgba(2, 8, 23, .5); }
+    ::-webkit-scrollbar-thumb { border: 2px solid rgba(2, 8, 23, .5); border-radius: 10px; background: #263854; }
+    ::-webkit-scrollbar-thumb:hover { background: #345171; }
+    @media (max-width: 800px) {
+        .container { width: min(100% - 24px, 1380px); padding-top: 20px; }
+        .topbar { align-items: stretch; flex-direction: column; margin-bottom: 30px; }
+        .brand-lockup { justify-content: center; }
+        .brand-logo { width: 60px; height: 60px; }
+        .language-picker { justify-content: space-between; }
+        .hero { margin-top: 28px; }
+        .grid, .output-targets, .advanced-grid { grid-template-columns: 1fr; }
+        .card { padding: 18px; }
+        button { flex: 1 1 auto; }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="topbar">
+        <div class="brand-lockup" aria-label="Quasar por Tigre">
+            <div class="brand">
+                <img class="brand-logo" src="icon0.svg" alt="Quasar">
+            </div>
+            <span class="brand-x" aria-hidden="true">×</span>
+            <div class="brand">
+                <img class="brand-logo" src="58aa80e40296bdeaf6b1c5fd79a64df5.webp" alt="Tigre">
+            </div>
+        </div>
+        <div class="language-picker">
+            <label for="language">Idioma</label>
+            <select id="language" aria-label="Idioma">
+                <option value="es">Español</option>
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+            </select>
+        </div>
+    </div>
+    <header class="hero">
+        <div class="eyebrow">Utility Tool</div>
+        <h1>QS VehicleShop SQL Generator</h1>
+        <p class="subtitle">Genera INSERT para qs_vehicleshop_vehicles y qs_vehicleshop_stock sin conectarte a MySQL.</p>
+    </header>
+
+    <div class="card">
+        <h2>Configuración del concesionario</h2>
+
+        <div class="output-targets">
+            <label class="target-option" for="includeCatalog">
+                <input id="includeCatalog" type="checkbox" checked>
+                <span class="target-copy">
+                    <span class="target-title">Catálogo general</span>
+                    <span class="target-description">Permite que los propietarios de concesionarios compren estos vehículos.</span>
+                </span>
+            </label>
+            <label class="target-option" for="includeStock">
+                <input id="includeStock" type="checkbox" checked>
+                <span class="target-copy">
+                    <span class="target-title">Stock del concesionario</span>
+                    <span class="target-description">Añade los vehículos directamente al concesionario seleccionado.</span>
+                </span>
+            </label>
+        </div>
+
+        <div class="grid">
+            <div>
+                <label>ID del concesionario</label>
+                <input id="shopId" type="number" value="1" min="0">
+            </div>
+            <div>
+                <label>Stock inicial</label>
+                <input id="stock" type="number" value="1" min="0">
+            </div>
+            <div>
+                <label>Descuento (%)</label>
+                <input id="discount" type="number" value="0" min="0">
+            </div>
+
+            <div>
+                <label>Precio mínimo</label>
+                <input id="minPrice" type="number" value="10000" min="0">
+            </div>
+            <div>
+                <label>Precio máximo</label>
+                <input id="maxPrice" type="number" value="500000" min="0">
+            </div>
+            <div>
+                <label>Precio de compra</label>
+                <input id="buyPrice" type="number" value="250000" min="0">
+            </div>
+
+            <div>
+                <label>Precio del stock</label>
+                <input id="stockPrice" type="number" value="250000" min="0">
+            </div>
+            <div>
+                <label>Stock ilimitado</label>
+                <select id="unlimited">
+                    <option value="0">No</option>
+                    <option value="1">Sí</option>
+                </select>
+            </div>
+            <div>
+                <label>Oculto</label>
+                <select id="hidden">
+                    <option value="0">No</option>
+                    <option value="1">Sí</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="margin-top:15px">
+            <label>Descripción predeterminada</label>
+            <textarea id="description" class="description">Vehículo disponible en nuestro concesionario.</textarea>
+        </div>
+
+        <div class="checkbox">
+            <input id="samePrice" type="checkbox">
+            <label for="samePrice" style="margin:0">Usar el precio de compra como precio del stock</label>
+        </div>
+
+        <div class="buttons">
+            <button class="success" onclick="applyDefaults()">Aplicar valores predeterminados a todos</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Lista de vehículos</h2>
+        <p style="color:#999">
+            Puedes pegar prácticamente cualquier formato: uno por línea, separados por comas,
+            con espacios, comillas o mezclados.
+        </p>
+
+        <textarea id="vehicles" placeholder="adder, zentorno, krieger
+t20
+futo, faggio
+&quot;pigalle&quot;"></textarea>
+
+        <div class="stats" id="stats">0 vehículos detectados</div>
+
+        <div class="buttons">
+            <button class="success" onclick="generate()">Generar SQL</button>
+            <button class="secondary" onclick="cleanList()">Limpiar lista</button>
+            <button class="secondary" onclick="copySQL()">Copiar SQL</button>
+            <button class="warning" onclick="downloadSQL()">Descargar .sql</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Herramientas avanzadas</h2>
+        <div class="advanced-grid">
+            <section class="tool-panel">
+                <h3>Proyecto y SQL</h3>
+                <div class="toolbar">
+                    <div class="toolbar-field">
+                        <label for="conflictMode">Vehículos existentes</label>
+                        <select id="conflictMode">
+                            <option value="insert">Insertar</option>
+                            <option value="ignore">Ignorar existentes</option>
+                            <option value="update">Actualizar existentes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="buttons">
+                    <button class="secondary" type="button" onclick="exportProject()">Exportar proyecto</button>
+                    <button class="secondary" type="button" onclick="document.getElementById('projectFile').click()">Importar proyecto</button>
+                    <button class="secondary" type="button" onclick="importSQL()">Importar SQL pegado</button>
+                    <input id="projectFile" type="file" accept="application/json,.json" hidden>
+                </div>
+            </section>
+            <section class="tool-panel">
+                <h3>Perfiles y edición masiva</h3>
+                <div class="toolbar">
+                    <div class="toolbar-field">
+                        <label for="priceProfile">Perfil</label>
+                        <select id="priceProfile">
+                            <option value="economy">Económico</option>
+                            <option value="standard">Gama media</option>
+                            <option value="sport">Deportivo</option>
+                            <option value="super">Superdeportivo</option>
+                            <option value="motorcycle">Moto</option>
+                            <option value="commercial">Comercial</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="buttons">
+                    <button class="success" type="button" onclick="applyProfile()">Aplicar a seleccionados</button>
+                    <button class="secondary" type="button" onclick="applyDefaultsToSelected()">Aplicar predeterminados</button>
+                    <button class="secondary" type="button" onclick="assignSelectedShop()">Asignar concesionario actual</button>
+                    <button class="warning" type="button" onclick="removeSelected()">Eliminar seleccionados</button>
+                </div>
+            </section>
+            <section class="tool-panel">
+                <h3>Fórmulas de precio</h3>
+                <div class="grid">
+                    <div><label for="minPercent">Mínimo − %</label><input id="minPercent" type="number" value="20" min="0"></div>
+                    <div><label for="maxPercent">Máximo + %</label><input id="maxPercent" type="number" value="30" min="0"></div>
+                    <div><label for="stockPercent">Stock + %</label><input id="stockPercent" type="number" value="10" min="0"></div>
+                    <div><label for="roundTo">Redondear a</label><input id="roundTo" type="number" value="100" min="1"></div>
+                </div>
+                <div class="buttons"><button class="success" type="button" onclick="applyFormula()">Calcular seleccionados</button></div>
+            </section>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Valores por vehículo</h2>
+        <p style="color:#999">Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.</p>
+        <div class="toolbar">
+            <div class="toolbar-field"><label for="vehicleSearch">Buscar</label><input id="vehicleSearch" type="search" placeholder="Modelo..."></div>
+            <div class="toolbar-field compact"><label for="vehicleFilter">Filtro</label><select id="vehicleFilter"><option value="all">Todos</option><option value="selected">Seleccionados</option><option value="hidden">Ocultos</option><option value="unlimited">Stock ilimitado</option></select></div>
+            <div class="toolbar-field compact"><label for="vehicleSort">Ordenar</label><select id="vehicleSort"><option value="input">Orden de entrada</option><option value="name">Nombre</option><option value="priceAsc">Precio ascendente</option><option value="priceDesc">Precio descendente</option></select></div>
+            <div class="buttons"><button class="secondary" type="button" onclick="undo()">Deshacer</button><button class="secondary" type="button" onclick="redo()">Rehacer</button></div>
+        </div>
+        <div class="validation-summary" id="validationSummary"></div>
+        <div class="vehicle-editor" id="vehicleEditor">
+            <div class="empty-editor">Añade vehículos para editar sus valores.</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>SQL generado</h2>
+        <div class="output-tabs">
+            <button class="output-tab active" type="button" data-output-tab="all">Todo</button>
+            <button class="output-tab" type="button" data-output-tab="catalog">Catálogo</button>
+            <button class="output-tab" type="button" data-output-tab="stock">Concesionario</button>
+        </div>
+        <pre id="output">Aquí aparecerá el SQL...</pre>
+    </div>
+</div>
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<script>
+const vehicleValues = new Map();
+const selectedVehicles = new Set();
+const undoStack = [];
+const redoStack = [];
+let outputSections = { catalog: '', stock: '' };
+let activeOutputTab = 'all';
+let restoringState = false;
+const storageKey = 'qs-vehicleshop-generator-project-v2';
+const priceProfiles = {
+    economy: { minPrice: 10000, maxPrice: 50000, buyPrice: 25000, stockPrice: 30000, stock: 10, discount: 0 },
+    standard: { minPrice: 50000, maxPrice: 250000, buyPrice: 150000, stockPrice: 180000, stock: 6, discount: 0 },
+    sport: { minPrice: 250000, maxPrice: 750000, buyPrice: 500000, stockPrice: 600000, stock: 4, discount: 0 },
+    super: { minPrice: 750000, maxPrice: 3000000, buyPrice: 1500000, stockPrice: 1800000, stock: 2, discount: 0 },
+    motorcycle: { minPrice: 15000, maxPrice: 150000, buyPrice: 75000, stockPrice: 90000, stock: 8, discount: 0 },
+    commercial: { minPrice: 50000, maxPrice: 500000, buyPrice: 250000, stockPrice: 300000, stock: 5, discount: 0 }
+};
+const translations = {
+    es: {
+        'Idioma': 'Idioma',
+        'Genera INSERT para qs_vehicleshop_vehicles y qs_vehicleshop_stock sin conectarte a MySQL.': 'Genera INSERT para qs_vehicleshop_vehicles y qs_vehicleshop_stock sin conectarte a MySQL.',
+        'Configuración del concesionario': 'Configuración del concesionario',
+        'Catálogo general': 'Catálogo general',
+        'Permite que los propietarios de concesionarios compren estos vehículos.': 'Permite que los propietarios de concesionarios compren estos vehículos.',
+        'Stock del concesionario': 'Stock del concesionario',
+        'Añade los vehículos directamente al concesionario seleccionado.': 'Añade los vehículos directamente al concesionario seleccionado.',
+        'ID del concesionario': 'ID del concesionario',
+        'Stock inicial': 'Stock inicial',
+        'Descuento (%)': 'Descuento (%)',
+        'Precio mínimo': 'Precio mínimo',
+        'Precio máximo': 'Precio máximo',
+        'Precio de compra': 'Precio de compra',
+        'Precio del stock': 'Precio del stock',
+        'Stock ilimitado': 'Stock ilimitado',
+        'Oculto': 'Oculto',
+        'No': 'No', 'Sí': 'Sí',
+        'Descripción predeterminada': 'Descripción predeterminada',
+        'Usar el precio de compra como precio del stock': 'Usar el precio de compra como precio del stock',
+        'Aplicar valores predeterminados a todos': 'Aplicar valores predeterminados a todos',
+        'Lista de vehículos': 'Lista de vehículos',
+        'Puedes pegar prácticamente cualquier formato: uno por línea, separados por comas, con espacios, comillas o mezclados.': 'Puedes pegar prácticamente cualquier formato: uno por línea, separados por comas, con espacios, comillas o mezclados.',
+        'Generar SQL': 'Generar SQL', 'Limpiar lista': 'Limpiar lista', 'Copiar SQL': 'Copiar SQL', 'Descargar .sql': 'Descargar .sql',
+        'Valores por vehículo': 'Valores por vehículo',
+        'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.': 'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.',
+        'SQL generado': 'SQL generado', 'Aquí aparecerá el SQL...': 'Aquí aparecerá el SQL...'
+    },
+    en: {
+        'Idioma': 'Language',
+        'Genera INSERT para qs_vehicleshop_vehicles y qs_vehicleshop_stock sin conectarte a MySQL.': 'Generate INSERT statements for qs_vehicleshop_vehicles and qs_vehicleshop_stock without connecting to MySQL.',
+        'Configuración del concesionario': 'Dealership settings',
+        'Catálogo general': 'General catalog', 'Permite que los propietarios de concesionarios compren estos vehículos.': 'Allows dealership owners to purchase these vehicles.',
+        'Stock del concesionario': 'Dealership stock', 'Añade los vehículos directamente al concesionario seleccionado.': 'Adds the vehicles directly to the selected dealership.',
+        'ID del concesionario': 'Dealership ID', 'Stock inicial': 'Initial stock', 'Descuento (%)': 'Discount (%)',
+        'Precio mínimo': 'Minimum price', 'Precio máximo': 'Maximum price', 'Precio de compra': 'Purchase price', 'Precio del stock': 'Stock price',
+        'Stock ilimitado': 'Unlimited stock', 'Oculto': 'Hidden', 'No': 'No', 'Sí': 'Yes', 'Descripción predeterminada': 'Default description',
+        'Usar el precio de compra como precio del stock': 'Use purchase price as stock price', 'Aplicar valores predeterminados a todos': 'Apply default values to all',
+        'Lista de vehículos': 'Vehicle list', 'Puedes pegar prácticamente cualquier formato: uno por línea, separados por comas, con espacios, comillas o mezclados.': 'Paste almost any format: one per line, comma-separated, with spaces, quotes, or mixed.',
+        'Generar SQL': 'Generate SQL', 'Limpiar lista': 'Clean list', 'Copiar SQL': 'Copy SQL', 'Descargar .sql': 'Download .sql',
+        'Valores por vehículo': 'Values per vehicle', 'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.': 'Values are preserved while you edit the list. Apply the defaults and change only the vehicles that need adjustment.',
+        'SQL generado': 'Generated SQL', 'Aquí aparecerá el SQL...': 'The SQL will appear here...'
+    },
+    fr: {
+        'Idioma': 'Langue',
+        'Genera INSERT para qs_vehicleshop_vehicles y qs_vehicleshop_stock sin conectarte a MySQL.': 'Générez des requêtes INSERT pour qs_vehicleshop_vehicles et qs_vehicleshop_stock sans vous connecter à MySQL.',
+        'Configuración del concesionario': 'Configuration du concessionnaire',
+        'Catálogo general': 'Catalogue général', 'Permite que los propietarios de concesionarios compren estos vehículos.': "Permet aux propriétaires de concessions d'acheter ces véhicules.",
+        'Stock del concesionario': 'Stock du concessionnaire', 'Añade los vehículos directamente al concesionario seleccionado.': 'Ajoute directement les véhicules au concessionnaire sélectionné.',
+        'ID del concesionario': 'ID du concessionnaire', 'Stock inicial': 'Stock initial', 'Descuento (%)': 'Remise (%)',
+        'Precio mínimo': 'Prix minimum', 'Precio máximo': 'Prix maximum', 'Precio de compra': "Prix d'achat", 'Precio del stock': 'Prix du stock',
+        'Stock ilimitado': 'Stock illimité', 'Oculto': 'Masqué', 'No': 'Non', 'Sí': 'Oui', 'Descripción predeterminada': 'Description par défaut',
+        'Usar el precio de compra como precio del stock': "Utiliser le prix d'achat comme prix du stock", 'Aplicar valores predeterminados a todos': 'Appliquer les valeurs par défaut à tous',
+        'Lista de vehículos': 'Liste des véhicules', 'Puedes pegar prácticamente cualquier formato: uno por línea, separados por comas, con espacios, comillas o mezclados.': 'Collez presque tous les formats : un par ligne, séparés par des virgules, avec des espaces, des guillemets ou un mélange.',
+        'Generar SQL': 'Générer le SQL', 'Limpiar lista': 'Nettoyer la liste', 'Copiar SQL': 'Copier le SQL', 'Descargar .sql': 'Télécharger .sql',
+        'Valores por vehículo': 'Valeurs par véhicule', 'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.': 'Les valeurs sont conservées pendant la modification. Appliquez les valeurs par défaut puis modifiez uniquement les véhicules nécessaires.',
+        'SQL generado': 'SQL généré', 'Aquí aparecerá el SQL...': 'Le SQL apparaîtra ici...'
+    },
+    de: {
+        'Idioma': 'Sprache',
+        'Genera INSERT para qs_vehicleshop_vehicles y qs_vehicleshop_stock sin conectarte a MySQL.': 'Erzeuge INSERT-Anweisungen für qs_vehicleshop_vehicles und qs_vehicleshop_stock ohne MySQL-Verbindung.',
+        'Configuración del concesionario': 'Autohaus-Einstellungen',
+        'Catálogo general': 'Allgemeiner Katalog', 'Permite que los propietarios de concesionarios compren estos vehículos.': 'Ermöglicht Autohausbesitzern, diese Fahrzeuge zu kaufen.',
+        'Stock del concesionario': 'Autohausbestand', 'Añade los vehículos directamente al concesionario seleccionado.': 'Fügt die Fahrzeuge direkt dem ausgewählten Autohaus hinzu.',
+        'ID del concesionario': 'Autohaus-ID', 'Stock inicial': 'Anfangsbestand', 'Descuento (%)': 'Rabatt (%)',
+        'Precio mínimo': 'Mindestpreis', 'Precio máximo': 'Höchstpreis', 'Precio de compra': 'Einkaufspreis', 'Precio del stock': 'Bestandspreis',
+        'Stock ilimitado': 'Unbegrenzter Bestand', 'Oculto': 'Ausgeblendet', 'No': 'Nein', 'Sí': 'Ja', 'Descripción predeterminada': 'Standardbeschreibung',
+        'Usar el precio de compra como precio del stock': 'Einkaufspreis als Bestandspreis verwenden', 'Aplicar valores predeterminados a todos': 'Standardwerte auf alle anwenden',
+        'Lista de vehículos': 'Fahrzeugliste', 'Puedes pegar prácticamente cualquier formato: uno por línea, separados por comas, con espacios, comillas o mezclados.': 'Fast jedes Format einfügen: eines pro Zeile, kommagetrennt, mit Leerzeichen, Anführungszeichen oder gemischt.',
+        'Generar SQL': 'SQL erzeugen', 'Limpiar lista': 'Liste bereinigen', 'Copiar SQL': 'SQL kopieren', 'Descargar .sql': '.sql herunterladen',
+        'Valores por vehículo': 'Werte pro Fahrzeug', 'Los valores se conservan mientras editas la lista. Puedes aplicar los predeterminados y modificar únicamente los coches que necesites.': 'Die Werte bleiben beim Bearbeiten erhalten. Standardwerte anwenden und anschließend nur die benötigten Fahrzeuge anpassen.',
+        'SQL generado': 'Erzeugtes SQL', 'Aquí aparecerá el SQL...': 'Das SQL wird hier angezeigt...'
+    }
+};
+const advancedKeys = ['Herramientas avanzadas', 'Proyecto y SQL', 'Vehículos existentes', 'Insertar', 'Ignorar existentes', 'Actualizar existentes', 'Exportar proyecto', 'Importar proyecto', 'Importar SQL pegado', 'Perfiles y edición masiva', 'Perfil', 'Económico', 'Gama media', 'Deportivo', 'Superdeportivo', 'Moto', 'Comercial', 'Aplicar a seleccionados', 'Aplicar predeterminados', 'Asignar concesionario actual', 'Eliminar seleccionados', 'Fórmulas de precio', 'Mínimo − %', 'Máximo + %', 'Stock + %', 'Redondear a', 'Calcular seleccionados', 'Buscar', 'Filtro', 'Todos', 'Seleccionados', 'Ocultos', 'Ordenar', 'Orden de entrada', 'Nombre', 'Precio ascendente', 'Precio descendente', 'Deshacer', 'Rehacer', 'Todo', 'Catálogo', 'Concesionario'];
+for (const key of advancedKeys) translations.es[key] = key;
+Object.assign(translations.en, {
+    'Herramientas avanzadas': 'Advanced tools', 'Proyecto y SQL': 'Project and SQL', 'Vehículos existentes': 'Existing vehicles', 'Insertar': 'Insert', 'Ignorar existentes': 'Ignore existing', 'Actualizar existentes': 'Update existing', 'Exportar proyecto': 'Export project', 'Importar proyecto': 'Import project', 'Importar SQL pegado': 'Import pasted SQL', 'Perfiles y edición masiva': 'Profiles and bulk editing', 'Perfil': 'Profile', 'Económico': 'Economy', 'Gama media': 'Standard', 'Deportivo': 'Sport', 'Superdeportivo': 'Supercar', 'Moto': 'Motorcycle', 'Comercial': 'Commercial', 'Aplicar a seleccionados': 'Apply to selected', 'Aplicar predeterminados': 'Apply defaults', 'Asignar concesionario actual': 'Assign current dealership', 'Eliminar seleccionados': 'Remove selected', 'Fórmulas de precio': 'Price formulas', 'Mínimo − %': 'Minimum − %', 'Máximo + %': 'Maximum + %', 'Stock + %': 'Stock + %', 'Redondear a': 'Round to', 'Calcular seleccionados': 'Calculate selected', 'Buscar': 'Search', 'Filtro': 'Filter', 'Todos': 'All', 'Seleccionados': 'Selected', 'Ocultos': 'Hidden', 'Ordenar': 'Sort', 'Orden de entrada': 'Input order', 'Nombre': 'Name', 'Precio ascendente': 'Price ascending', 'Precio descendente': 'Price descending', 'Deshacer': 'Undo', 'Rehacer': 'Redo', 'Todo': 'All', 'Catálogo': 'Catalog', 'Concesionario': 'Dealership'
+});
+Object.assign(translations.fr, {
+    'Herramientas avanzadas': 'Outils avancés', 'Proyecto y SQL': 'Projet et SQL', 'Vehículos existentes': 'Véhicules existants', 'Insertar': 'Insérer', 'Ignorar existentes': 'Ignorer les existants', 'Actualizar existentes': 'Mettre à jour', 'Exportar proyecto': 'Exporter le projet', 'Importar proyecto': 'Importer le projet', 'Importar SQL pegado': 'Importer le SQL collé', 'Perfiles y edición masiva': 'Profils et édition groupée', 'Perfil': 'Profil', 'Económico': 'Économique', 'Gama media': 'Gamme moyenne', 'Deportivo': 'Sport', 'Superdeportivo': 'Supercar', 'Moto': 'Moto', 'Comercial': 'Commercial', 'Aplicar a seleccionados': 'Appliquer à la sélection', 'Aplicar predeterminados': 'Appliquer les valeurs par défaut', 'Asignar concesionario actual': 'Assigner le concessionnaire actuel', 'Eliminar seleccionados': 'Supprimer la sélection', 'Fórmulas de precio': 'Formules de prix', 'Mínimo − %': 'Minimum − %', 'Máximo + %': 'Maximum + %', 'Stock + %': 'Stock + %', 'Redondear a': 'Arrondir à', 'Calcular seleccionados': 'Calculer la sélection', 'Buscar': 'Rechercher', 'Filtro': 'Filtre', 'Todos': 'Tous', 'Seleccionados': 'Sélectionnés', 'Ocultos': 'Masqués', 'Ordenar': 'Trier', 'Orden de entrada': "Ordre d'entrée", 'Nombre': 'Nom', 'Precio ascendente': 'Prix croissant', 'Precio descendente': 'Prix décroissant', 'Deshacer': 'Annuler', 'Rehacer': 'Rétablir', 'Todo': 'Tout', 'Catálogo': 'Catalogue', 'Concesionario': 'Concessionnaire'
+});
+Object.assign(translations.de, {
+    'Herramientas avanzadas': 'Erweiterte Werkzeuge', 'Proyecto y SQL': 'Projekt und SQL', 'Vehículos existentes': 'Vorhandene Fahrzeuge', 'Insertar': 'Einfügen', 'Ignorar existentes': 'Vorhandene ignorieren', 'Actualizar existentes': 'Vorhandene aktualisieren', 'Exportar proyecto': 'Projekt exportieren', 'Importar proyecto': 'Projekt importieren', 'Importar SQL pegado': 'Eingefügtes SQL importieren', 'Perfiles y edición masiva': 'Profile und Massenbearbeitung', 'Perfil': 'Profil', 'Económico': 'Günstig', 'Gama media': 'Mittelklasse', 'Deportivo': 'Sport', 'Superdeportivo': 'Supersportwagen', 'Moto': 'Motorrad', 'Comercial': 'Nutzfahrzeug', 'Aplicar a seleccionados': 'Auf Auswahl anwenden', 'Aplicar predeterminados': 'Standardwerte anwenden', 'Asignar concesionario actual': 'Aktuelles Autohaus zuweisen', 'Eliminar seleccionados': 'Auswahl entfernen', 'Fórmulas de precio': 'Preisformeln', 'Mínimo − %': 'Minimum − %', 'Máximo + %': 'Maximum + %', 'Stock + %': 'Bestand + %', 'Redondear a': 'Runden auf', 'Calcular seleccionados': 'Auswahl berechnen', 'Buscar': 'Suchen', 'Filtro': 'Filter', 'Todos': 'Alle', 'Seleccionados': 'Ausgewählt', 'Ocultos': 'Ausgeblendet', 'Ordenar': 'Sortieren', 'Orden de entrada': 'Eingabereihenfolge', 'Nombre': 'Name', 'Precio ascendente': 'Preis aufsteigend', 'Precio descendente': 'Preis absteigend', 'Deshacer': 'Rückgängig', 'Rehacer': 'Wiederholen', 'Todo': 'Alles', 'Catálogo': 'Katalog', 'Concesionario': 'Autohaus'
+});
+const messages = {
+    es: { empty: 'Añade vehículos para editar sus valores.', none: 'No se han encontrado vehículos.', one: 'vehículo detectado', many: 'vehículos detectados', model: 'Modelo', min: 'Precio mínimo', max: 'Precio máximo', buy: 'Precio compra', price: 'Precio stock', stock: 'Stock', discount: 'Descuento %', unlimited: 'Ilimitado', hidden: 'Oculto', no: 'No', yes: 'Sí', copied: 'SQL copiado al portapapeles.', description: 'Vehículo disponible en nuestro concesionario.', vehicles: 'VEHÍCULOS', dealership: 'Concesionario ID', actions: 'Acciones', duplicate: 'Duplicar', remove: 'Quitar', noResults: 'No hay vehículos que coincidan con los filtros.' },
+    en: { empty: 'Add vehicles to edit their values.', none: 'No vehicles found.', one: 'vehicle detected', many: 'vehicles detected', model: 'Model', min: 'Minimum price', max: 'Maximum price', buy: 'Purchase price', price: 'Stock price', stock: 'Stock', discount: 'Discount %', unlimited: 'Unlimited', hidden: 'Hidden', no: 'No', yes: 'Yes', copied: 'SQL copied to clipboard.', description: 'Vehicle available at our dealership.', vehicles: 'VEHICLES', dealership: 'Dealership ID', actions: 'Actions', duplicate: 'Duplicate', remove: 'Remove', noResults: 'No vehicles match the filters.' },
+    fr: { empty: 'Ajoutez des véhicules pour modifier leurs valeurs.', none: 'Aucun véhicule trouvé.', one: 'véhicule détecté', many: 'véhicules détectés', model: 'Modèle', min: 'Prix minimum', max: 'Prix maximum', buy: "Prix d'achat", price: 'Prix du stock', stock: 'Stock', discount: 'Remise %', unlimited: 'Illimité', hidden: 'Masqué', no: 'Non', yes: 'Oui', copied: 'SQL copié dans le presse-papiers.', description: 'Véhicule disponible chez notre concessionnaire.', vehicles: 'VÉHICULES', dealership: 'ID du concessionnaire', actions: 'Actions', duplicate: 'Dupliquer', remove: 'Retirer', noResults: 'Aucun véhicule ne correspond aux filtres.' },
+    de: { empty: 'Fahrzeuge hinzufügen, um ihre Werte zu bearbeiten.', none: 'Keine Fahrzeuge gefunden.', one: 'Fahrzeug erkannt', many: 'Fahrzeuge erkannt', model: 'Modell', min: 'Mindestpreis', max: 'Höchstpreis', buy: 'Einkaufspreis', price: 'Bestandspreis', stock: 'Bestand', discount: 'Rabatt %', unlimited: 'Unbegrenzt', hidden: 'Ausgeblendet', no: 'Nein', yes: 'Ja', copied: 'SQL in die Zwischenablage kopiert.', description: 'Fahrzeug in unserem Autohaus verfügbar.', vehicles: 'FAHRZEUGE', dealership: 'Autohaus-ID', actions: 'Aktionen', duplicate: 'Duplizieren', remove: 'Entfernen', noResults: 'Keine Fahrzeuge entsprechen den Filtern.' }
+};
+let currentLanguage = 'es';
+const staticTextNodes = [];
+
+function normalizeText(value) {
+    return value.replace(/\s+/g, ' ').trim();
+}
+
+function initializeTranslations() {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let node;
+
+    while ((node = walker.nextNode())) {
+        const key = normalizeText(node.nodeValue);
+        if (translations.es[key]) staticTextNodes.push({ node, key });
+    }
+
+    const saved = localStorage.getItem('qs-generator-language');
+    const browserLanguage = navigator.language.slice(0, 2).toLowerCase();
+    setLanguage(translations[saved] ? saved : (translations[browserLanguage] ? browserLanguage : 'es'));
+}
+
+function setLanguage(language) {
+    currentLanguage = translations[language] ? language : 'es';
+    document.documentElement.lang = currentLanguage;
+    document.getElementById('language').value = currentLanguage;
+    localStorage.setItem('qs-generator-language', currentLanguage);
+
+    for (const item of staticTextNodes) item.node.nodeValue = translations[currentLanguage][item.key];
+
+    const description = document.getElementById('description');
+    const defaultDescriptions = Object.values(messages).map(languageMessages => languageMessages.description);
+    if (defaultDescriptions.includes(description.value)) description.value = messages[currentLanguage].description;
+
+    const vehicles = parseVehicles();
+    document.getElementById('stats').textContent = vehicleCount(vehicles.length);
+    renderVehicleEditor(vehicles);
+}
+
+function t(key) {
+    return messages[currentLanguage][key];
+}
+
+function vehicleCount(count) {
+    return count + ' ' + (count === 1 ? t('one') : t('many'));
+}
+
+function parseVehicles() {
+    let text = document.getElementById('vehicles').value;
+
+    // Separadores habituales.
+    text = text.replace(/[\r\n]+/g, ',');
+    text = text.replace(/[;|]+/g, ',');
+
+    const items = text.split(',');
+
+    const vehicles = [];
+    const seen = new Set();
+
+    for (let item of items) {
+        item = item.trim();
+
+        // Quitar comillas, backticks y espacios sobrantes.
+        item = item.replace(/^[\s"'`]+|[\s"'`]+$/g, '');
+
+        if (!item) continue;
+
+        // Si alguien pega algo como "adder zentorno krieger", intentamos separar
+        // solo cuando hay espacios; normalmente un modelo no contiene espacios.
+        let parts = item.split(/\s+/);
+
+        for (let part of parts) {
+            part = part.trim().toLowerCase();
+            part = part.replace(/[^a-z0-9_\-]/g, '');
+
+            if (!part) continue;
+            if (!seen.has(part)) {
+                seen.add(part);
+                vehicles.push(part);
+            }
+        }
+    }
+
+    return vehicles;
+}
+
+function sqlString(value) {
+    return "'" + String(value).replace(/'/g, "''") + "'";
+}
+
+function num(id) {
+    const value = Number(document.getElementById(id).value);
+    return Number.isFinite(value) ? value : 0;
+}
+
+function updateTargetFields() {
+    const includeCatalog = document.getElementById('includeCatalog').checked;
+    const includeStock = document.getElementById('includeStock').checked;
+    const samePrice = document.getElementById('samePrice').checked;
+
+    for (const id of ['minPrice', 'maxPrice', 'description']) {
+        document.getElementById(id).disabled = !includeCatalog;
+    }
+
+    document.getElementById('buyPrice').disabled = !includeCatalog && !(includeStock && samePrice);
+
+    for (const id of ['shopId', 'stock', 'discount', 'unlimited', 'samePrice']) {
+        document.getElementById(id).disabled = !includeStock;
+    }
+
+    document.getElementById('stockPrice').disabled = !includeStock || samePrice;
+    renderVehicleEditor(parseVehicles());
+}
+
+function defaultValues() {
+    const buyPrice = num('buyPrice');
+    return {
+        shopId: num('shopId'),
+        minPrice: num('minPrice'),
+        maxPrice: num('maxPrice'),
+        buyPrice,
+        stockPrice: document.getElementById('samePrice').checked ? buyPrice : num('stockPrice'),
+        stock: num('stock'),
+        discount: num('discount'),
+        unlimited: num('unlimited'),
+        hidden: num('hidden')
+    };
+}
+
+function syncVehicleEditor() {
+    const vehicles = parseVehicles();
+    const defaults = defaultValues();
+
+    for (const vehicle of vehicles) {
+        if (!vehicleValues.has(vehicle)) vehicleValues.set(vehicle, { ...defaults });
+    }
+
+    renderVehicleEditor(vehicles);
+    return vehicles;
+}
+
+function renderVehicleEditor(vehicles = parseVehicles()) {
+    const editor = document.getElementById('vehicleEditor');
+    const includeCatalog = document.getElementById('includeCatalog').checked;
+    const includeStock = document.getElementById('includeStock').checked;
+    const catalogDisabled = includeCatalog ? '' : ' disabled';
+    const stockDisabled = includeStock ? '' : ' disabled';
+    const search = (document.getElementById('vehicleSearch')?.value || '').trim().toLowerCase();
+    const filter = document.getElementById('vehicleFilter')?.value || 'all';
+    const sort = document.getElementById('vehicleSort')?.value || 'input';
+
+    let visible = vehicles.filter(vehicle => {
+        const values = vehicleValues.get(vehicle) || defaultValues();
+        if (search && !vehicle.includes(search)) return false;
+        if (filter === 'selected' && !selectedVehicles.has(vehicle)) return false;
+        if (filter === 'hidden' && values.hidden !== 1) return false;
+        if (filter === 'unlimited' && values.unlimited !== 1) return false;
+        return true;
+    });
+
+    if (sort === 'name') visible.sort((a, b) => a.localeCompare(b));
+    if (sort === 'priceAsc') visible.sort((a, b) => vehicleValues.get(a).stockPrice - vehicleValues.get(b).stockPrice);
+    if (sort === 'priceDesc') visible.sort((a, b) => vehicleValues.get(b).stockPrice - vehicleValues.get(a).stockPrice);
+
+    if (!vehicles.length) {
+        editor.innerHTML = '<div class="empty-editor">' + t('empty') + '</div>';
+        return;
+    }
+    if (!visible.length) {
+        editor.innerHTML = '<div class="empty-editor">' + t('noResults') + '</div>';
+        return;
+    }
+
+    const rows = visible.map(vehicle => {
+        const values = vehicleValues.get(vehicle) || defaultValues();
+        return `<tr data-vehicle="${vehicle}">
+            <td><input class="row-select" type="checkbox"${selectedVehicles.has(vehicle) ? ' checked' : ''} aria-label="Seleccionar ${vehicle}"></td>
+            <td>${vehicle}</td>
+            <td><input data-field="shopId" type="number" min="0" value="${values.shopId ?? num('shopId')}"${stockDisabled}></td>
+            <td><input data-field="minPrice" type="number" min="0" value="${values.minPrice}"${catalogDisabled}></td>
+            <td><input data-field="maxPrice" type="number" min="0" value="${values.maxPrice}"${catalogDisabled}></td>
+            <td><input data-field="buyPrice" type="number" min="0" value="${values.buyPrice}"${catalogDisabled}></td>
+            <td><input data-field="stockPrice" type="number" min="0" value="${values.stockPrice}"${stockDisabled}></td>
+            <td><input data-field="stock" type="number" min="0" value="${values.stock}"${stockDisabled}></td>
+            <td><input data-field="discount" type="number" min="0" max="100" value="${values.discount}"${stockDisabled}></td>
+            <td><select data-field="unlimited"${stockDisabled}><option value="0"${values.unlimited === 0 ? ' selected' : ''}>${t('no')}</option><option value="1"${values.unlimited === 1 ? ' selected' : ''}>${t('yes')}</option></select></td>
+            <td><select data-field="hidden"><option value="0"${values.hidden === 0 ? ' selected' : ''}>${t('no')}</option><option value="1"${values.hidden === 1 ? ' selected' : ''}>${t('yes')}</option></select></td>
+            <td><div class="row-actions"><button class="secondary icon-button" type="button" onclick="duplicateVehicle('${vehicle}')">${t('duplicate')}</button><button class="warning icon-button" type="button" onclick="removeVehicle('${vehicle}')">${t('remove')}</button></div></td>
+        </tr>`;
+    }).join('');
+
+    editor.innerHTML = `<table class="vehicle-table">
+        <thead><tr><th><input id="selectAllVehicles" type="checkbox" aria-label="Seleccionar todos"></th><th>${t('model')}</th><th>ID</th><th>${t('min')}</th><th>${t('max')}</th><th>${t('buy')}</th><th>${t('price')}</th><th>${t('stock')}</th><th>${t('discount')}</th><th>${t('unlimited')}</th><th>${t('hidden')}</th><th>${t('actions')}</th></tr></thead>
+        <tbody>${rows}</tbody>
+    </table>`;
+
+    const selectAll = document.getElementById('selectAllVehicles');
+    selectAll.checked = visible.every(vehicle => selectedVehicles.has(vehicle));
+    selectAll.addEventListener('change', event => {
+        for (const vehicle of visible) event.target.checked ? selectedVehicles.add(vehicle) : selectedVehicles.delete(vehicle);
+        renderVehicleEditor(vehicles);
+    });
+}
+
+function applyDefaults() {
+    const vehicles = parseVehicles();
+    if (vehicles.length && !confirm(`¿Sobrescribir los valores de ${vehicles.length} vehículo(s)?`)) return;
+    pushHistory();
+    const defaults = defaultValues();
+    for (const vehicle of vehicles) vehicleValues.set(vehicle, { ...defaults });
+    renderVehicleEditor(vehicles);
+    saveProject();
+    notify('Valores predeterminados aplicados.');
+}
+
+function validateProject(vehicles = parseVehicles()) {
+    const errors = [];
+    const invalidVehicles = new Set();
+    const includeCatalog = document.getElementById('includeCatalog').checked;
+    const includeStock = document.getElementById('includeStock').checked;
+    const fail = (vehicle, message) => { errors.push(`${vehicle}: ${message}`); invalidVehicles.add(vehicle); };
+
+    if (!vehicles.length) errors.push(t('none'));
+    for (const vehicle of vehicles) {
+        const values = vehicleValues.get(vehicle) || defaultValues();
+        if (includeCatalog && values.minPrice > values.maxPrice) fail(vehicle, 'el precio mínimo supera al máximo.');
+        if (includeCatalog && (values.buyPrice < values.minPrice || values.buyPrice > values.maxPrice)) fail(vehicle, 'el precio de compra está fuera del rango.');
+        if (includeStock && values.shopId < 1) fail(vehicle, 'el ID del concesionario debe ser mayor que 0.');
+        if (includeStock && values.stock < 0 && values.unlimited !== 1) fail(vehicle, 'el stock no puede ser negativo.');
+        if (includeStock && (values.discount < 0 || values.discount > 100)) fail(vehicle, 'el descuento debe estar entre 0 y 100.');
+    }
+
+    document.querySelectorAll('#vehicleEditor [data-vehicle]').forEach(row => row.classList.toggle('invalid-row', invalidVehicles.has(row.dataset.vehicle)));
+    const summary = document.getElementById('validationSummary');
+    summary.classList.toggle('visible', errors.length > 0);
+    summary.innerHTML = errors.length ? `<strong>Revisa ${errors.length} problema${errors.length === 1 ? '' : 's'}:</strong><ul>${errors.map(error => `<li>${error}</li>`).join('')}</ul>` : '';
+    return errors;
+}
+
+function generate() {
+    const vehicles = syncVehicleEditor();
+    document.getElementById('stats').textContent = vehicleCount(vehicles.length);
+    if (validateProject(vehicles).length) {
+        document.getElementById('output').textContent = vehicles.length ? 'Corrige los errores antes de generar el SQL.' : t('none');
+        notify('Hay errores que deben corregirse.', 'error');
+        return false;
+    }
+
+    const description = document.getElementById('description').value;
+    const includeCatalog = document.getElementById('includeCatalog').checked;
+    const includeStock = document.getElementById('includeStock').checked;
+    const mode = document.getElementById('conflictMode').value;
+    outputSections = { catalog: '', stock: '' };
+
+    if (includeCatalog) {
+        let sql = '-- ==========================================\n-- QS VEHICLESHOP - ' + t('vehicles') + '\n-- ' + t('vehicles') + ': ' + vehicles.length + '\n-- ==========================================\n\n';
+        if (mode === 'update') {
+            sql += vehicles.map(vehicle => {
+                const v = vehicleValues.get(vehicle);
+                return `UPDATE \`qs_vehicleshop_vehicles\` SET \`default_description\` = ${sqlString(description)}, \`min_price\` = ${v.minPrice}, \`max_price\` = ${v.maxPrice}, \`buy_price\` = ${v.buyPrice}, \`hidden\` = ${v.hidden} WHERE \`vehicle_model\` = ${sqlString(vehicle)};\nINSERT INTO \`qs_vehicleshop_vehicles\` (\`vehicle_model\`, \`default_description\`, \`min_price\`, \`max_price\`, \`buy_price\`, \`hidden\`) SELECT ${sqlString(vehicle)}, ${sqlString(description)}, ${v.minPrice}, ${v.maxPrice}, ${v.buyPrice}, ${v.hidden} WHERE NOT EXISTS (SELECT 1 FROM \`qs_vehicleshop_vehicles\` WHERE \`vehicle_model\` = ${sqlString(vehicle)});`;
+            }).join('\n');
+        } else {
+            sql += `${mode === 'ignore' ? 'INSERT IGNORE' : 'INSERT'} INTO \`qs_vehicleshop_vehicles\`\n(\`vehicle_model\`, \`default_description\`, \`min_price\`, \`max_price\`, \`buy_price\`, \`hidden\`) VALUES\n`;
+            sql += vehicles.map((vehicle, i) => {
+                const v = vehicleValues.get(vehicle);
+                return `\t(${sqlString(vehicle)}, ${sqlString(description)}, ${v.minPrice}, ${v.maxPrice}, ${v.buyPrice}, ${v.hidden})${i === vehicles.length - 1 ? ';' : ','}`;
+            }).join('\n');
+        }
+        outputSections.catalog = sql;
+    }
+
+    if (includeStock) {
+        let sql = '-- ==========================================\n-- QS VEHICLESHOP STOCK\n-- ==========================================\n\n';
+        if (mode === 'update') {
+            sql += vehicles.map(vehicle => {
+                const v = vehicleValues.get(vehicle);
+                return `UPDATE \`qs_vehicleshop_stock\` SET \`price\` = ${v.stockPrice}, \`stock\` = ${v.stock}, \`unlimited_stock\` = ${v.unlimited}, \`discount\` = ${v.discount}, \`hidden\` = ${v.hidden} WHERE \`vehicleshop_id\` = ${v.shopId} AND \`vehicle_model\` = ${sqlString(vehicle)};\nINSERT INTO \`qs_vehicleshop_stock\` (\`vehicleshop_id\`, \`vehicle_model\`, \`price\`, \`stock\`, \`unlimited_stock\`, \`discount\`, \`hidden\`) SELECT ${v.shopId}, ${sqlString(vehicle)}, ${v.stockPrice}, ${v.stock}, ${v.unlimited}, ${v.discount}, ${v.hidden} WHERE NOT EXISTS (SELECT 1 FROM \`qs_vehicleshop_stock\` WHERE \`vehicleshop_id\` = ${v.shopId} AND \`vehicle_model\` = ${sqlString(vehicle)});`;
+            }).join('\n');
+        } else {
+            sql += `${mode === 'ignore' ? 'INSERT IGNORE' : 'INSERT'} INTO \`qs_vehicleshop_stock\`\n(\`vehicleshop_id\`, \`vehicle_model\`, \`price\`, \`stock\`, \`unlimited_stock\`, \`discount\`, \`hidden\`) VALUES\n`;
+            sql += vehicles.map((vehicle, i) => {
+                const v = vehicleValues.get(vehicle);
+                return `\t(${v.shopId}, ${sqlString(vehicle)}, ${v.stockPrice}, ${v.stock}, ${v.unlimited}, ${v.discount}, ${v.hidden})${i === vehicles.length - 1 ? ';' : ','}`;
+            }).join('\n');
+        }
+        outputSections.stock = sql;
+    }
+
+    renderOutput();
+    saveProject();
+    return true;
+}
+
+function renderOutput() {
+    const sections = activeOutputTab === 'all' ? [outputSections.catalog, outputSections.stock] : [outputSections[activeOutputTab]];
+    document.getElementById('output').textContent = sections.filter(Boolean).join('\n\n') || 'No hay SQL para esta sección.';
+}
+
+function projectState() {
+    const fieldIds = ['shopId', 'stock', 'discount', 'minPrice', 'maxPrice', 'buyPrice', 'stockPrice', 'unlimited', 'hidden', 'description', 'samePrice', 'includeCatalog', 'includeStock', 'conflictMode', 'minPercent', 'maxPercent', 'stockPercent', 'roundTo'];
+    const fields = {};
+    for (const id of fieldIds) {
+        const element = document.getElementById(id);
+        fields[id] = element.type === 'checkbox' ? element.checked : element.value;
+    }
+    return { version: 2, vehicles: document.getElementById('vehicles').value, values: Object.fromEntries(vehicleValues), selected: [...selectedVehicles], fields };
+}
+
+function restoreProject(state, addHistory = false) {
+    if (!state || !state.fields || typeof state.vehicles !== 'string') throw new Error('Proyecto no válido');
+    if (addHistory) pushHistory();
+    restoringState = true;
+    document.getElementById('vehicles').value = state.vehicles;
+    for (const [id, value] of Object.entries(state.fields)) {
+        const element = document.getElementById(id);
+        if (!element) continue;
+        if (element.type === 'checkbox') element.checked = Boolean(value);
+        else element.value = value;
+    }
+    vehicleValues.clear();
+    for (const [vehicle, values] of Object.entries(state.values || {})) vehicleValues.set(vehicle, { ...defaultValues(), ...values });
+    selectedVehicles.clear();
+    for (const vehicle of state.selected || []) selectedVehicles.add(vehicle);
+    restoringState = false;
+    syncVehicleEditor();
+    updateTargetFields();
+    document.getElementById('stats').textContent = vehicleCount(parseVehicles().length);
+    saveProject();
+}
+
+function saveProject() {
+    if (restoringState) return;
+    localStorage.setItem(storageKey, JSON.stringify(projectState()));
+}
+
+function loadSavedProject() {
+    const saved = localStorage.getItem(storageKey);
+    if (!saved) return;
+    try { restoreProject(JSON.parse(saved)); } catch { localStorage.removeItem(storageKey); }
+}
+
+function pushHistory() {
+    if (restoringState) return;
+    const snapshot = JSON.stringify(projectState());
+    if (undoStack.at(-1) !== snapshot) undoStack.push(snapshot);
+    if (undoStack.length > 40) undoStack.shift();
+    redoStack.length = 0;
+}
+
+function undo() {
+    if (!undoStack.length) return notify('No hay cambios para deshacer.');
+    redoStack.push(JSON.stringify(projectState()));
+    restoreProject(JSON.parse(undoStack.pop()));
+}
+
+function redo() {
+    if (!redoStack.length) return notify('No hay cambios para rehacer.');
+    undoStack.push(JSON.stringify(projectState()));
+    restoreProject(JSON.parse(redoStack.pop()));
+}
+
+function targetVehicles() {
+    const vehicles = parseVehicles();
+    const selected = vehicles.filter(vehicle => selectedVehicles.has(vehicle));
+    if (!selected.length) notify('No hay vehículos seleccionados.', 'error');
+    return selected;
+}
+
+function applyProfile() {
+    const targets = targetVehicles();
+    if (!targets.length) return;
+    pushHistory();
+    const profile = priceProfiles[document.getElementById('priceProfile').value];
+    for (const vehicle of targets) Object.assign(vehicleValues.get(vehicle), profile);
+    renderVehicleEditor(); saveProject(); notify('Perfil aplicado.');
+}
+
+function applyDefaultsToSelected() {
+    const targets = targetVehicles();
+    if (!targets.length) return;
+    pushHistory();
+    const defaults = defaultValues();
+    for (const vehicle of targets) vehicleValues.set(vehicle, { ...defaults });
+    renderVehicleEditor(); saveProject(); notify('Valores predeterminados aplicados.');
+}
+
+function assignSelectedShop() {
+    const targets = targetVehicles();
+    if (!targets.length) return;
+    pushHistory();
+    const shopId = num('shopId');
+    for (const vehicle of targets) vehicleValues.get(vehicle).shopId = shopId;
+    renderVehicleEditor(); saveProject(); notify('Concesionario asignado.');
+}
+
+function applyFormula() {
+    const targets = targetVehicles();
+    if (!targets.length) return;
+    pushHistory();
+    const minPercent = num('minPercent') / 100;
+    const maxPercent = num('maxPercent') / 100;
+    const stockPercent = num('stockPercent') / 100;
+    const roundTo = Math.max(1, num('roundTo'));
+    const round = value => Math.round(value / roundTo) * roundTo;
+    for (const vehicle of targets) {
+        const values = vehicleValues.get(vehicle);
+        values.minPrice = round(values.buyPrice * (1 - minPercent));
+        values.maxPrice = round(values.buyPrice * (1 + maxPercent));
+        values.stockPrice = round(values.buyPrice * (1 + stockPercent));
+    }
+    renderVehicleEditor(); saveProject(); notify('Fórmulas aplicadas.');
+}
+
+function removeVehicle(vehicle) {
+    pushHistory();
+    const vehicles = parseVehicles().filter(item => item !== vehicle);
+    document.getElementById('vehicles').value = vehicles.join('\n');
+    vehicleValues.delete(vehicle); selectedVehicles.delete(vehicle);
+    syncVehicleEditor(); saveProject();
+}
+
+function removeSelected() {
+    const targets = targetVehicles();
+    if (!targets.length || !confirm(`¿Eliminar ${targets.length} vehículo(s)?`)) return;
+    pushHistory();
+    const removing = new Set(targets);
+    document.getElementById('vehicles').value = parseVehicles().filter(vehicle => !removing.has(vehicle)).join('\n');
+    for (const vehicle of targets) { vehicleValues.delete(vehicle); selectedVehicles.delete(vehicle); }
+    syncVehicleEditor(); saveProject(); notify('Vehículos eliminados.');
+}
+
+function duplicateVehicle(vehicle) {
+    pushHistory();
+    const vehicles = parseVehicles();
+    let copy = `${vehicle}_copy`;
+    let index = 2;
+    while (vehicles.includes(copy)) copy = `${vehicle}_copy${index++}`;
+    document.getElementById('vehicles').value = [...vehicles, copy].join('\n');
+    vehicleValues.set(copy, { ...vehicleValues.get(vehicle) });
+    syncVehicleEditor(); saveProject();
+}
+
+function exportProject() {
+    downloadBlob(JSON.stringify(projectState(), null, 2), 'qs-vehicleshop-project.json', 'application/json');
+    notify('Proyecto exportado.');
+}
+
+function importSQL() {
+    const sql = document.getElementById('vehicles').value;
+    const imported = new Map();
+    const catalogPattern = /\(\s*'([a-zA-Z0-9_-]+)'\s*,\s*'((?:''|\\'|[^'])*)'\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*([01])\s*\)/g;
+    const stockPattern = /\(\s*(\d+)\s*,\s*'([a-zA-Z0-9_-]+)'\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*([01])\s*,\s*(-?\d+)\s*,\s*([01])\s*\)/g;
+    let match;
+    let importedDescription = '';
+
+    while ((match = catalogPattern.exec(sql))) {
+        const vehicle = match[1].toLowerCase();
+        const values = imported.get(vehicle) || defaultValues();
+        Object.assign(values, { minPrice: Number(match[3]), maxPrice: Number(match[4]), buyPrice: Number(match[5]), hidden: Number(match[6]) });
+        imported.set(vehicle, values);
+        if (!importedDescription) importedDescription = match[2].replace(/''/g, "'").replace(/\\'/g, "'");
+    }
+    while ((match = stockPattern.exec(sql))) {
+        const vehicle = match[2].toLowerCase();
+        const values = imported.get(vehicle) || defaultValues();
+        Object.assign(values, { shopId: Number(match[1]), stockPrice: Number(match[3]), stock: Number(match[4]), unlimited: Number(match[5]), discount: Number(match[6]), hidden: Number(match[7]) });
+        imported.set(vehicle, values);
+    }
+
+    if (!imported.size) return notify('No se han detectado vehículos en el SQL.', 'error');
+    pushHistory();
+    document.getElementById('vehicles').value = [...imported.keys()].join('\n');
+    if (importedDescription) document.getElementById('description').value = importedDescription;
+    vehicleValues.clear();
+    for (const [vehicle, values] of imported) vehicleValues.set(vehicle, values);
+    syncVehicleEditor(); saveProject(); notify(`${imported.size} vehículos importados.`);
+}
+
+function downloadBlob(content, filename, type) {
+    const url = URL.createObjectURL(new Blob([content], { type: `${type};charset=utf-8` }));
+    const anchor = document.createElement('a');
+    anchor.href = url; anchor.download = filename; document.body.appendChild(anchor); anchor.click(); anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function notify(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.getElementById('toastContainer').appendChild(toast);
+    setTimeout(() => toast.remove(), 3200);
+}
+
+function cleanList() {
+    const vehicles = parseVehicles();
+    document.getElementById('vehicles').value = vehicles.join('\n');
+    document.getElementById('stats').textContent = vehicleCount(vehicles.length);
+    syncVehicleEditor();
+}
+
+async function copySQL() {
+    const output = document.getElementById('output');
+    if (!generate()) return;
+
+    const sql = output.textContent;
+    if (sql === t('none')) return;
+
+    try {
+        await navigator.clipboard.writeText(sql);
+    } catch {
+        const textarea = document.createElement('textarea');
+        textarea.value = sql;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+    }
+
+    notify(t('copied'));
+}
+
+function downloadSQL() {
+    const output = document.getElementById('output');
+    if (!generate()) return;
+
+    const sql = output.textContent;
+    if (sql === t('none')) return;
+
+    const blob = new Blob([sql], { type: 'text/sql;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'qs_vehicleshop_vehicles.sql';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+document.getElementById('vehicleEditor').addEventListener('focusin', event => {
+    if (event.target.dataset.field) pushHistory();
+});
+
+document.getElementById('vehicleEditor').addEventListener('input', event => {
+    const field = event.target.dataset.field;
+    const row = event.target.closest('[data-vehicle]');
+    if (!field || !row) return;
+    const values = vehicleValues.get(row.dataset.vehicle);
+    values[field] = Number(event.target.value);
+    saveProject();
+});
+
+document.getElementById('vehicleEditor').addEventListener('change', event => {
+    if (!event.target.classList.contains('row-select')) return;
+    const vehicle = event.target.closest('[data-vehicle]').dataset.vehicle;
+    event.target.checked ? selectedVehicles.add(vehicle) : selectedVehicles.delete(vehicle);
+    saveProject();
+});
+
+document.getElementById('vehicles').addEventListener('focus', pushHistory);
+document.getElementById('vehicles').addEventListener('input', () => {
+    const vehicles = syncVehicleEditor();
+    document.getElementById('stats').textContent = vehicleCount(vehicles.length);
+    saveProject();
+});
+
+for (const target of document.querySelectorAll('#includeCatalog, #includeStock')) {
+    target.addEventListener('change', event => {
+        const catalog = document.getElementById('includeCatalog');
+        const stock = document.getElementById('includeStock');
+        if (!catalog.checked && !stock.checked) event.target.checked = true;
+        updateTargetFields();
+    });
+}
+
+document.getElementById('samePrice').addEventListener('change', updateTargetFields);
+document.getElementById('language').addEventListener('change', event => setLanguage(event.target.value));
+for (const id of ['vehicleSearch', 'vehicleFilter', 'vehicleSort']) {
+    document.getElementById(id).addEventListener(id === 'vehicleSearch' ? 'input' : 'change', () => renderVehicleEditor());
+}
+for (const tab of document.querySelectorAll('[data-output-tab]')) {
+    tab.addEventListener('click', () => {
+        activeOutputTab = tab.dataset.outputTab;
+        document.querySelectorAll('[data-output-tab]').forEach(item => item.classList.toggle('active', item === tab));
+        renderOutput();
+    });
+}
+document.getElementById('projectFile').addEventListener('change', event => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        try { restoreProject(JSON.parse(reader.result), true); notify('Proyecto importado.'); }
+        catch { notify('El archivo de proyecto no es válido.', 'error'); }
+        event.target.value = '';
+    };
+    reader.readAsText(file);
+});
+document.addEventListener('change', event => {
+    if (event.target.matches('input, select, textarea')) saveProject();
+});
+document.addEventListener('keydown', event => {
+    if (event.ctrlKey && event.key === 'Enter') { event.preventDefault(); generate(); }
+    if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() === 'z') { event.preventDefault(); undo(); }
+    if (event.ctrlKey && (event.key.toLowerCase() === 'y' || (event.shiftKey && event.key.toLowerCase() === 'z'))) { event.preventDefault(); redo(); }
+});
+initializeTranslations();
+updateTargetFields();
+loadSavedProject();
+</script>
+
+</body>
+</html>
